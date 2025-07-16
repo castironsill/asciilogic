@@ -1,0 +1,365 @@
+/* CSS Variables for Theme */
+:root {
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252525;
+    --bg-tertiary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --accent: #007acc;
+    --grid-color: #333333;
+    --canvas-bg: #1a1a1a;
+}
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+    user-select: none;
+}
+
+/* Main Layout */
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Toolbar Styles */
+.toolbar {
+    width: 60px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--bg-tertiary);
+    display: flex;
+    flex-direction: column;
+    padding: 10px 0;
+}
+
+.tool-btn {
+    width: 40px;
+    height: 40px;
+    margin: 5px auto;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.tool-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.tool-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.tool-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Tooltip Styles */
+.tooltip {
+    position: absolute;
+    left: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 1000;
+}
+
+.tool-btn:hover .tooltip {
+    opacity: 1;
+}
+
+/* Main Area */
+.main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Top Bar */
+.top-bar {
+    height: 50px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+}
+
+/* Canvas Container */
+.canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--canvas-bg);
+}
+
+canvas {
+    position: absolute;
+    cursor: crosshair;
+}
+
+/* Controls */
+.controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    background: var(--bg-secondary);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.control-btn {
+    padding: 8px 16px;
+    background: var(--bg-tertiary);
+    border: none;
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.control-btn:hover {
+    background: var(--accent);
+}
+
+.control-btn.active {
+    background: var(--accent);
+}
+
+/* Zoom Controls */
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-tertiary);
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.zoom-level {
+    font-size: 14px;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* Modal Styles */
+.export-modal, .help-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.help-content {
+    background: var(--bg-secondary);
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    margin: 20px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+/* Export Options */
+.export-options {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.export-preview {
+    background: var(--bg-tertiary);
+    padding: 20px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre;
+    overflow-x: auto;
+    min-height: 200px;
+}
+
+/* Utilities */
+.divider {
+    height: 1px;
+    background: var(--bg-tertiary);
+    margin: 20px 0;
+}
+
+/* Form Elements */
+input[type="number"] {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 5px 10px;
+    border-radius: 4px;
+    width: 80px;
+}
+
+label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+textarea {
+    width: 100%;
+    height: 300px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 10px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    resize: vertical;
+}
+
+/* Text Input */
+.text-input {
+    position: fixed;
+    background: var(--bg-secondary);
+    border: 2px solid var(--accent);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    font-family: monospace;
+    font-size: 16px;
+    outline: none;
+    display: none;
+    z-index: 9999;
+    min-width: 150px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+/* Help Content Styles */
+.help-content h2 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: var(--accent);
+}
+
+.help-content h3 {
+    margin-top: 15px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.help-content p, .help-content li {
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.help-content code {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    color: var(--accent);
+}
+
+/* Keyboard Key Style */
+kbd {
+    display: inline-block;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--bg-primary);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    margin: 0 2px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}

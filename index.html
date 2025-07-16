@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="asciilogic - Free online ASCII diagram tool for creating logic diagrams, flowcharts, elevator schematics, and control system diagrams. Export to ASCII art or import existing diagrams.">
+    <meta name="keywords" content="ascii diagram, ascii art, logic diagram, flowchart, ascii generator, text diagram, elevator diagram, control logic, ascii drawing tool, online diagram editor">
+    <meta name="author" content="asciilogic">
+    <title>asciilogic - ASCII Diagram Tool for Logic & Control Systems</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="toolbar">
+            <button class="tool-btn active" data-tool="select">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
+                </svg>
+                <span class="tooltip">Select (V)</span>
+            </button>
+            <button class="tool-btn" data-tool="line">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14"/>
+                </svg>
+                <span class="tooltip">Line (L)</span>
+            </button>
+            <button class="tool-btn" data-tool="arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14m-7-7l7 7-7 7"/>
+                </svg>
+                <span class="tooltip">Arrow (A)</span>
+            </button>
+            <button class="tool-btn" data-tool="box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18"/>
+                </svg>
+                <span class="tooltip">Box (B)</span>
+            </button>
+            <button class="tool-btn" data-tool="text">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 3v18m-4-18h8"/>
+                </svg>
+                <span class="tooltip">Text (T)</span>
+            </button>
+            <div class="divider" style="flex: 1;"></div>
+            <button class="tool-btn" id="undo-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 7v6h6"/>
+                    <path d="M3 13a9 9 0 1 0 3-7.7L3 7"/>
+                </svg>
+                <span class="tooltip">Undo (Ctrl+Z)</span>
+            </button>
+            <button class="tool-btn" id="redo-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 7v6h-6"/>
+                    <path d="M21 13a9 9 0 1 1-3-7.7L21 7"/>
+                </svg>
+                <span class="tooltip">Redo (Ctrl+Y)</span>
+            </button>
+        </div>
+        
+        <div class="main-area">
+            <div class="top-bar">
+                <h1 style="font-size: 20px; font-weight: 500;">asciilogic</h1>
+                <div class="settings-row">
+                    <label>Grid Size:</label>
+                    <input type="number" id="grid-size" value="10" min="5" max="50" step="5">
+                </div>
+                <button class="control-btn" id="help-btn">Help</button>
+                <button class="control-btn" id="import-btn">Import ASCII</button>
+                <button class="control-btn" id="export-btn">Export</button>
+                <button class="control-btn" id="clear-btn">Clear</button>
+            </div>
+            
+            <div class="canvas-container" id="canvas-container">
+                <canvas id="grid-canvas"></canvas>
+                <canvas id="main-canvas"></canvas>
+                <input type="text" class="text-input" id="text-input" />
+            </div>
+            
+            <div class="controls">
+                <div class="zoom-controls">
+                    <button class="control-btn" id="zoom-out">−</button>
+                    <span class="zoom-level" id="zoom-level">100%</span>
+                    <button class="control-btn" id="zoom-in">+</button>
+                </div>
+                <button class="control-btn" id="fit-content">Fit Content</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="help-modal" id="help-modal">
+        <div class="help-content">
+            <div class="modal-header">
+                <h1>Welcome to asciilogic</h1>
+                <button class="modal-close" id="close-help">&times;</button>
+            </div>
+            
+            <p><strong>asciilogic</strong> is a powerful ASCII diagram tool designed for creating logic diagrams, control schematics, elevator layouts, and technical documentation. Perfect for engineers, developers, and anyone who needs to create clear technical diagrams that can be embedded in code, documentation, or emails.</p>
+
+            <h2>Drawing Tools</h2>
+            <ul>
+                <li><strong>Select Tool</strong> <kbd>V</kbd> - Select, move, and edit elements. Drag to create selection boxes for multiple elements.</li>
+                <li><strong>Line Tool</strong> <kbd>L</kbd> - Draw straight lines with optional 90° bends. Lines snap to grid for clean connections.</li>
+                <li><strong>Arrow Tool</strong> <kbd>A</kbd> - Draw lines with directional arrows. Perfect for showing signal flow or connections.</li>
+                <li><strong>Box Tool</strong> <kbd>B</kbd> - Create rectangles for components, modules, or grouping elements.</li>
+                <li><strong>Text Tool</strong> <kbd>T</kbd> - Add labels and annotations. Click to place text cursor.</li>
+            </ul>
+
+            <h2>Keyboard Shortcuts</h2>
+            <ul>
+                <li><kbd>Ctrl+Z</kbd> - Undo last action</li>
+                <li><kbd>Ctrl+Y</kbd> - Redo action</li>
+                <li><kbd>Ctrl+V</kbd> - Import ASCII from clipboard</li>
+                <li><kbd>Delete</kbd> - Delete selected elements</li>
+                <li><kbd>Shift+Drag</kbd> - Pan the canvas</li>
+                <li><kbd>Mouse Wheel</kbd> - Zoom in/out</li>
+            </ul>
+
+            <h2>Features</h2>
+            <h3>Smart Line Drawing</h3>
+            <p>Lines automatically constrain to horizontal, vertical, or single 90° bends. Start dragging in your intended direction, and the line will follow intelligently.</p>
+
+            <h3>Multi-Selection</h3>
+            <p>Select multiple elements by dragging a selection box. Move groups of elements together while maintaining their relative positions.</p>
+
+            <h3>Import & Export</h3>
+            <p>Import existing ASCII diagrams from other tools or export your creations in ASCII Basic or Extended (Unicode) format. Perfect for embedding in source code, markdown documentation, or terminal applications.</p>
+
+            <h3>Grid Snapping</h3>
+            <p>All elements snap to a configurable grid, ensuring clean, aligned diagrams. Adjust grid size from 5 to 50 pixels.</p>
+
+            <h2>Common Use Cases</h2>
+            <ul>
+                <li><strong>Elevator Control Systems</strong> - Document shaft layouts, control logic, and safety circuits</li>
+                <li><strong>Logic Diagrams</strong> - Create flowcharts and state machines</li>
+                <li><strong>Network Topology</strong> - Show system connections and data flow</li>
+                <li><strong>Electrical Schematics</strong> - Basic relay logic and control circuits</li>
+                <li><strong>Software Architecture</strong> - Module relationships and data flow</li>
+                <li><strong>Documentation</strong> - Embed diagrams directly in code comments or README files</li>
+            </ul>
+
+            <h2>Tips</h2>
+            <ul>
+                <li>Use <strong>Fit Content</strong> to automatically zoom and center your diagram</li>
+                <li>Hold middle mouse button to pan, or use Shift+drag</li>
+                <li>Double-click elements in Select mode to edit properties</li>
+                <li>Export to ASCII Extended for cleaner box-drawing characters</li>
+                <li>The tool saves your work in browser memory - clear cache carefully!</li>
+            </ul>
+
+            <p style="margin-top: 30px; text-align: center; color: var(--text-secondary);">
+                Created for engineers and developers who need quick, clean ASCII diagrams.<br>
+                asciilogic - Making technical diagrams as simple as typing.
+            </p>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="export-modal" id="export-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Export Drawing</h2>
+                <button class="modal-close" id="close-modal">&times;</button>
+            </div>
+            
+            <div class="export-options">
+                <button class="control-btn active" data-format="ascii-basic">ASCII Basic</button>
+                <button class="control-btn" data-format="ascii-extended">ASCII Extended</button>
+            </div>
+            
+            <div class="export-preview" id="export-preview"></div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="control-btn" id="copy-to-clipboard">Copy to Clipboard</button>
+                <button class="control-btn" id="download-file">Download File</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="export-modal" id="import-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import ASCII Drawing</h2>
+                <button class="modal-close" id="close-import-modal">&times;</button>
+            </div>
+            
+            <p style="margin-bottom: 10px; color: var(--text-secondary);">Paste your ASCII art below:</p>
+            <textarea id="import-textarea" placeholder="Paste ASCII art here..."></textarea>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="control-btn" id="import-confirm">Import</button>
+                <button class="control-btn" id="import-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load JavaScript -->
+    <script src="js/app.js"></script>
+</body>
+</html>
