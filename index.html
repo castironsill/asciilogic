@@ -63,9 +63,16 @@
             <div class="top-bar">
                 <h1 style="font-size: 20px; font-weight: 500;">asciilogic</h1>
                 <div class="settings-row">
-                    <label>Grid Size:</label>
+                    <label for="grid-size">Grid Size:</label>
                     <input type="number" id="grid-size" value="10" min="5" max="50" step="5">
                 </div>
+                <!-- FIXED: Added for attribute to label -->
+                <div class="settings-row">
+                    <label for="font-size">Font Size:</label>
+                    <input type="number" id="font-size" value="16" min="10" max="48" step="2">
+                    <span style="font-size: 12px; color: var(--text-secondary);">px</span>
+                </div>
+                <!-- END OF FIX -->
                 <button class="control-btn" id="help-btn">Help</button>
                 <button class="control-btn" id="import-btn">Import ASCII</button>
                 <button class="control-btn" id="export-btn">Export</button>
@@ -75,7 +82,7 @@
             <div class="canvas-container" id="canvas-container">
                 <canvas id="grid-canvas"></canvas>
                 <canvas id="main-canvas"></canvas>
-                <input type="text" class="text-input" id="text-input" />
+                <input type="text" class="text-input" id="text-input" aria-label="Text input for diagram" />
             </div>
             
             <div class="controls">
@@ -105,7 +112,7 @@
                 <li><strong>Line Tool</strong> <kbd>L</kbd> - Draw straight lines with optional 90° bends. Lines snap to grid for clean connections.</li>
                 <li><strong>Arrow Tool</strong> <kbd>A</kbd> - Draw lines with directional arrows. Perfect for showing signal flow or connections.</li>
                 <li><strong>Box Tool</strong> <kbd>B</kbd> - Create rectangles for components, modules, or grouping elements.</li>
-                <li><strong>Text Tool</strong> <kbd>T</kbd> - Add labels and annotations. Click to place text cursor.</li>
+                <li><strong>Text Tool</strong> <kbd>T</kbd> - Add labels and annotations. Click to place text cursor. Double-click existing text to edit.</li>
             </ul>
 
             <h2>Keyboard Shortcuts</h2>
@@ -124,6 +131,9 @@
 
             <h3>Multi-Selection</h3>
             <p>Select multiple elements by dragging a selection box. Move groups of elements together while maintaining their relative positions.</p>
+
+            <h3>Text Editing</h3>
+            <p>Create text with different font sizes using the Font Size control. Select existing text to change its size, or double-click to edit both content and size.</p>
 
             <h3>Import & Export</h3>
             <p>Import existing ASCII diagrams from other tools or export your creations in ASCII Basic or Extended (Unicode) format. Perfect for embedding in source code, markdown documentation, or terminal applications.</p>
@@ -145,7 +155,8 @@
             <ul>
                 <li>Use <strong>Fit Content</strong> to automatically zoom and center your diagram</li>
                 <li>Hold middle mouse button to pan, or use Shift+drag</li>
-                <li>Double-click elements in Select mode to edit properties</li>
+                <li>Double-click text elements to edit their content</li>
+                <li>Select text and use the Font Size control to change its size</li>
                 <li>Export to ASCII Extended for cleaner box-drawing characters</li>
                 <li>The tool saves your work in browser memory - clear cache carefully!</li>
             </ul>
@@ -188,7 +199,7 @@
             </div>
             
             <p style="margin-bottom: 10px; color: var(--text-secondary);">Paste your ASCII art below:</p>
-            <textarea id="import-textarea" placeholder="Paste ASCII art here..."></textarea>
+            <textarea id="import-textarea" placeholder="Paste ASCII art here..." aria-label="Import ASCII art textarea"></textarea>
             
             <div style="margin-top: 20px; display: flex; gap: 10px;">
                 <button class="control-btn" id="import-confirm">Import</button>
@@ -198,6 +209,6 @@
     </div>
 
     <!-- Load JavaScript -->
-    <script src="js/app.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
