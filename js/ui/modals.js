@@ -4,9 +4,32 @@ export class ModalManager {
     constructor(app) {
         this.app = app;
         this.setupModalListeners();
+        this.checkFirstVisit();
+    }
+    
+    checkFirstVisit() {
+        // Check if user has visited before
+        const hasVisited = localStorage.getItem('asciilogic-visited');
+        if (!hasVisited) {
+            this.showHelpModal();
+            localStorage.setItem('asciilogic-visited', 'true');
+        }
     }
     
     setupModalListeners() {
+        // Help modal setup
+        const helpModal = document.getElementById('help-modal');
+        const helpBtn = document.getElementById('help-btn');
+        const closeHelp = document.getElementById('close-help');
+        
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => this.showHelpModal());
+        }
+        
+        if (closeHelp) {
+            closeHelp.addEventListener('click', () => this.hideHelpModal());
+        }
+        
         // Import modal setup
         const importModal = document.getElementById('import-modal');
         const importClose = document.getElementById('close-import-modal'); // Fixed ID
@@ -75,7 +98,24 @@ export class ModalManager {
             if (e.target === exportModal) {
                 this.hideExportModal();
             }
+            if (e.target === helpModal) {
+                this.hideHelpModal();
+            }
         });
+    }
+    
+    showHelpModal() {
+        const modal = document.getElementById('help-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+    
+    hideHelpModal() {
+        const modal = document.getElementById('help-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
     
     showImportModal() {
