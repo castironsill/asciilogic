@@ -757,6 +757,9 @@ export class DrawingApp {
             return '-|─│═║'.includes(char);
         };
         
+        // Store text elements to process after boxes
+        const textElements = [];
+        
         // Find and trace boxes
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
@@ -787,6 +790,7 @@ export class DrawingApp {
                     if (endX > x && endY > y) {
                         const bottomRightChar = grid[endY]?.[endX];
                         if (bottomRightChar && '┘╝+'.includes(bottomRightChar)) {
+                            // Mark box borders as visited
                             for (let by = y; by <= endY; by++) {
                                 for (let bx = x; bx <= endX; bx++) {
                                     if (by === y || by === endY || bx === x || bx === endX) {
@@ -797,13 +801,53 @@ export class DrawingApp {
                                 }
                             }
                             
-                            this.elements.push({
+                            const box = {
                                 type: 'box',
                                 startX: x * this.gridSize * scaleX,
                                 startY: y * this.gridSize * scaleY,
                                 endX: endX * this.gridSize * scaleX,
                                 endY: endY * this.gridSize * scaleY
-                            });
+                            };
+                            
+                            this.elements.push(box);
+                            
+                            // Collect text inside this box to center it later
+                            let boxText = '';
+                            let textY = -1;
+                            
+                            for (let ty = y + 1; ty < endY; ty++) {
+                                let lineText = '';
+                                for (let tx = x + 1; tx < endX; tx++) {
+                                    if (!visited[ty][tx] && grid[ty][tx] !== ' ') {
+                                        lineText += grid[ty][tx];
+                                        visited[ty][tx] = true;
+                                    } else if (lineText.length > 0 && grid[ty][tx] === ' ') {
+                                        lineText += ' ';
+                                    }
+                                }
+                                lineText = lineText.trim();
+                                if (lineText) {
+                                    boxText = lineText;
+                                    textY = ty;
+                                }
+                            }
+                            
+                            // If we found text, center it in the box
+                            if (boxText && textY !== -1) {
+                                const boxCenterX = (box.startX + box.endX) / 2;
+                                const boxCenterY = (box.startY + box.endY) / 2;
+                                const fontSize = 16;
+                                const charWidth = fontSize * 0.6;
+                                const textWidth = boxText.length * charWidth;
+                                
+                                textElements.push({
+                                    type: 'text',
+                                    x: boxCenterX - textWidth / 2,
+                                    y: boxCenterY + fontSize / 4, // Slight vertical adjustment
+                                    text: boxText,
+                                    fontSize: fontSize
+                                });
+                            }
                         }
                     }
                 }
@@ -1006,6 +1050,9 @@ export class DrawingApp {
                 });
             }
         }
+        
+        // Add all centered text elements at the end
+        this.elements.push(...textElements);
         
         this.history.saveState();
         this.fitToContent();
