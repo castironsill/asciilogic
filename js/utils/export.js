@@ -1,15 +1,27 @@
-// js/utils/export.js - Export/Import functionality with notifications
-
-import { notifications } from '../ui/notifications.js';
+// utils/export.js
 
 export class ExportManager {
     constructor(app) {
         this.app = app;
+        this.setupEventListeners();
     }
     
-    exportToASCII(extended = false) {
-        if (this.app.elements.length === 0) return 'No drawing to export';
+    setupEventListeners() {
+        const exportBtn = document.getElementById('export-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                const asciiText = this.exportToASCII(false); // Start with basic
+                this.app.modalManager.showExportModal(asciiText);
+            });
+        }
+    }
+    
+    exportToASCII(useExtended = false) {
+        if (this.app.elements.length === 0) {
+            return 'No drawing to export';
+        }
         
+        // Find bounds
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         
         this.app.elements.forEach(el => {
@@ -17,164 +29,231 @@ export class ExportManager {
                 const fontSize = el.fontSize || 16;
                 const charWidth = fontSize * 0.6;
                 minX = Math.min(minX, el.x);
-                minY = Math.min(minY, el.y);
+                minY = Math.min(minY, el.y - fontSize);
                 maxX = Math.max(maxX, el.x + el.text.length * charWidth);
-                maxY = Math.max(maxY, el.y + fontSize);
+                maxY = Math.max(maxY, el.y);
+            } else if (el.type === 'box') {
+                minX = Math.min(minX, el.startX, el.endX);
+                minY = Math.min(minY, el.startY, el.endY);
+                maxX = Math.max(maxX, el.startX, el.endX);
+                maxY = Math.max(maxY, el.startY, el.endY);
             } else {
                 minX = Math.min(minX, el.startX, el.endX);
                 minY = Math.min(minY, el.startY, el.endY);
                 maxX = Math.max(maxX, el.startX, el.endX);
                 maxY = Math.max(maxY, el.startY, el.endY);
+                
                 if (el.bendX !== undefined) {
                     minX = Math.min(minX, el.bendX);
+                    minY = Math.min(minY, el.bendY);
                     maxX = Math.max(maxX, el.bendX);
+                    maxY = Math.max(maxY, el.bendY);
                 }
             }
         });
         
-        const width = Math.ceil((maxX - minX) / this.app.gridSize) + 1;
-        const height = Math.ceil((maxY - minY) / this.app.gridSize) + 1;
+        // Add padding
+        const padding = 20;
+        minX -= padding;
+        minY -= padding;
+        maxX += padding;
+        maxY += padding;
+        
+        // ASCII characters are typically 2:1 (height:width)
+        // So we need to scale X by 2 relative to Y for proper aspect ratio
+        const charAspectRatio = 2.0; // Typical monospace char is twice as tall as wide
+        const scaleX = 1.0; // Horizontal spacing between characters (reduced from 1.2)
+        const scaleY = 2.4; // Vertical spacing between lines (increased from 1.8)
+        
+        // Calculate grid size with aspect ratio correction
+        const width = Math.ceil((maxX - minX) / (this.app.gridSize * scaleX));
+        const height = Math.ceil((maxY - minY) / (this.app.gridSize * scaleY));
+        
+        // Create grid
         const grid = Array(height).fill(null).map(() => Array(width).fill(' '));
         
-        this.app.elements.forEach(el => {
-            if (el.type === 'text') {
-                const x = Math.round((el.x - minX) / this.app.gridSize);
-                const y = Math.round((el.y - minY) / this.app.gridSize);
-                for (let i = 0; i < el.text.length; i++) {
-                    if (x + i < width && y >= 0 && y < height) {
-                        grid[y][x + i] = el.text[i];
-                    }
-                }
-            } else if (el.type === 'box') {
-                this.renderBoxToGrid(grid, el, minX, minY, extended);
-            } else if (el.type === 'line' || el.type === 'arrow') {
-                this.renderLineToGrid(grid, el, minX, minY, extended, el.type === 'arrow');
-            }
-        });
+        // Helper to convert canvas coordinates to grid coordinates
+        const toGridX = (x) => Math.round((x - minX) / (this.app.gridSize * scaleX));
+        const toGridY = (y) => Math.round((y - minY) / (this.app.gridSize * scaleY));
         
-        let trimmedGrid = grid.filter(row => row.some(cell => cell !== ' '));
-        
-        if (trimmedGrid.length === 0) return 'No drawing to export';
-        
-        trimmedGrid = trimmedGrid.map(row => {
-            const lastNonSpace = row.reduce((last, cell, index) => 
-                cell !== ' ' ? index : last, -1);
-            return row.slice(0, lastNonSpace + 1);
-        });
-        
-        return trimmedGrid.map(row => row.join('')).join('\n');
-    }
-    
-    renderBoxToGrid(grid, box, offsetX, offsetY, extended) {
-        const x1 = Math.round((Math.min(box.startX, box.endX) - offsetX) / this.app.gridSize);
-        const y1 = Math.round((Math.min(box.startY, box.endY) - offsetY) / this.app.gridSize);
-        const x2 = Math.round((Math.max(box.startX, box.endX) - offsetX) / this.app.gridSize);
-        const y2 = Math.round((Math.max(box.startY, box.endY) - offsetY) / this.app.gridSize);
-        
-        const chars = extended ? {
+        // Characters for drawing
+        const chars = useExtended ? {
             horizontal: '─',
             vertical: '│',
             topLeft: '┌',
             topRight: '┐',
             bottomLeft: '└',
-            bottomRight: '┘'
+            bottomRight: '┘',
+            cross: '┼',
+            teeUp: '┴',
+            teeDown: '┬',
+            teeLeft: '┤',
+            teeRight: '├'
         } : {
             horizontal: '-',
             vertical: '|',
             topLeft: '+',
             topRight: '+',
             bottomLeft: '+',
-            bottomRight: '+'
+            bottomRight: '+',
+            cross: '+',
+            teeUp: '+',
+            teeDown: '+',
+            teeLeft: '+',
+            teeRight: '+'
         };
         
-        for (let x = x1 + 1; x < x2; x++) {
-            grid[y1][x] = chars.horizontal;
-            grid[y2][x] = chars.horizontal;
-        }
+        // Draw elements
+        this.app.elements.forEach(el => {
+            if (el.type === 'line' || el.type === 'arrow') {
+                this.drawLineToGrid(grid, el, toGridX, toGridY, chars, useExtended);
+            } else if (el.type === 'box') {
+                this.drawBoxToGrid(grid, el, toGridX, toGridY, chars);
+            } else if (el.type === 'text') {
+                this.drawTextToGrid(grid, el, toGridX, toGridY);
+            }
+        });
         
-        for (let y = y1 + 1; y < y2; y++) {
-            grid[y][x1] = chars.vertical;
-            grid[y][x2] = chars.vertical;
-        }
+        // Draw arrows
+        this.app.elements.forEach(el => {
+            if (el.type === 'arrow') {
+                this.drawArrowHeads(grid, el, toGridX, toGridY);
+            }
+        });
         
-        grid[y1][x1] = chars.topLeft;
-        grid[y1][x2] = chars.topRight;
-        grid[y2][x1] = chars.bottomLeft;
-        grid[y2][x2] = chars.bottomRight;
+        // Convert grid to string
+        return grid.map(row => row.join('')).join('\n');
     }
     
-    renderLineToGrid(grid, line, offsetX, offsetY, extended, hasArrow) {
-        const x1 = Math.round((line.startX - offsetX) / this.app.gridSize);
-        const y1 = Math.round((line.startY - offsetY) / this.app.gridSize);
-        const x2 = Math.round((line.endX - offsetX) / this.app.gridSize);
-        const y2 = Math.round((line.endY - offsetY) / this.app.gridSize);
+    drawLineToGrid(grid, line, toGridX, toGridY, chars, useExtended) {
+        const startX = toGridX(line.startX);
+        const startY = toGridY(line.startY);
+        const endX = toGridX(line.endX);
+        const endY = toGridY(line.endY);
         
-        if (line.bendX !== undefined) {
-            const bx = Math.round((line.bendX - offsetX) / this.app.gridSize);
-            const by = Math.round((line.bendY - offsetY) / this.app.gridSize);
+        if (line.bendX !== undefined && line.bendY !== undefined) {
+            const bendX = toGridX(line.bendX);
+            const bendY = toGridY(line.bendY);
             
-            this.drawLineSegment(grid, x1, y1, bx, by, extended, false);
-            this.drawLineSegment(grid, bx, by, x2, y2, extended, hasArrow);
+            // Draw first segment
+            this.drawStraightLine(grid, startX, startY, bendX, bendY, chars);
             
-            if (extended) {
-                const h1 = x1 !== bx;
-                const h2 = bx !== x2;
-                if (h1 && !h2) grid[by][bx] = '└';
-                else if (!h1 && h2) grid[by][bx] = '┌';
-            } else {
-                grid[by][bx] = '+';
+            // Draw second segment
+            this.drawStraightLine(grid, bendX, bendY, endX, endY, chars);
+            
+            // Draw corner
+            if (useExtended && this.isValidCell(grid, bendY, bendX)) {
+                const horizontal1 = (startY === bendY);
+                const horizontal2 = (bendY === endY);
+                
+                if (horizontal1 && !horizontal2) {
+                    grid[bendY][bendX] = bendX > startX ? '┐' : '┌';
+                } else if (!horizontal1 && horizontal2) {
+                    grid[bendY][bendX] = bendY > startY ? '└' : '┌';
+                }
             }
         } else {
-            this.drawLineSegment(grid, x1, y1, x2, y2, extended, hasArrow);
+            this.drawStraightLine(grid, startX, startY, endX, endY, chars);
         }
     }
     
-    drawLineSegment(grid, x1, y1, x2, y2, extended, hasArrow) {
-        const dx = Math.sign(x2 - x1);
-        const dy = Math.sign(y2 - y1);
+    drawStraightLine(grid, x1, y1, x2, y2, chars) {
+        const dx = Math.abs(x2 - x1);
+        const dy = Math.abs(y2 - y1);
+        const sx = x1 < x2 ? 1 : -1;
+        const sy = y1 < y2 ? 1 : -1;
         
-        const horizontal = dy === 0;
-        const vertical = dx === 0;
-        
-        const lineChar = extended ? (horizontal ? '─' : '│') : (horizontal ? '-' : '|');
-        
-        let x = x1, y = y1;
-        while (x !== x2 || y !== y2) {
-            grid[y][x] = lineChar;
-            if (x !== x2) x += dx;
-            if (y !== y2) y += dy;
-        }
-        
-        if (hasArrow) {
-            if (horizontal) {
-                grid[y2][x2] = dx > 0 ? '>' : '<';
-            } else {
-                grid[y2][x2] = dy > 0 ? 'v' : '^';
+        if (dx === 0) {
+            // Vertical line
+            for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
+                if (this.isValidCell(grid, y, x1)) {
+                    if (grid[y][x1] === chars.horizontal || grid[y][x1] === '-') {
+                        grid[y][x1] = chars.cross;
+                    } else if (grid[y][x1] === ' ') {
+                        grid[y][x1] = chars.vertical;
+                    }
+                }
+            }
+        } else if (dy === 0) {
+            // Horizontal line
+            for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
+                if (this.isValidCell(grid, y1, x)) {
+                    if (grid[y1][x] === chars.vertical || grid[y1][x] === '|') {
+                        grid[y1][x] = chars.cross;
+                    } else if (grid[y1][x] === ' ') {
+                        grid[y1][x] = chars.horizontal;
+                    }
+                }
             }
         }
     }
     
-    copyToClipboard(text) {
-        return navigator.clipboard.writeText(text).then(() => {
-            notifications.show('Copied to clipboard!');
-            return true;
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            notifications.show('Failed to copy to clipboard');
-            return false;
-        });
+    drawBoxToGrid(grid, box, toGridX, toGridY, chars) {
+        const x1 = toGridX(Math.min(box.startX, box.endX));
+        const y1 = toGridY(Math.min(box.startY, box.endY));
+        const x2 = toGridX(Math.max(box.startX, box.endX));
+        const y2 = toGridY(Math.max(box.startY, box.endY));
+        
+        // Top and bottom borders
+        for (let x = x1; x <= x2; x++) {
+            if (this.isValidCell(grid, y1, x)) grid[y1][x] = chars.horizontal;
+            if (this.isValidCell(grid, y2, x)) grid[y2][x] = chars.horizontal;
+        }
+        
+        // Left and right borders
+        for (let y = y1; y <= y2; y++) {
+            if (this.isValidCell(grid, y, x1)) grid[y][x1] = chars.vertical;
+            if (this.isValidCell(grid, y, x2)) grid[y][x2] = chars.vertical;
+        }
+        
+        // Corners
+        if (this.isValidCell(grid, y1, x1)) grid[y1][x1] = chars.topLeft;
+        if (this.isValidCell(grid, y1, x2)) grid[y1][x2] = chars.topRight;
+        if (this.isValidCell(grid, y2, x1)) grid[y2][x1] = chars.bottomLeft;
+        if (this.isValidCell(grid, y2, x2)) grid[y2][x2] = chars.bottomRight;
     }
     
-    downloadAsFile(text, filename = 'ascii-drawing.txt') {
-        const blob = new Blob([text], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        notifications.show(`Downloaded as ${filename}`);
+    drawTextToGrid(grid, text, toGridX, toGridY) {
+        const x = toGridX(text.x);
+        const y = toGridY(text.y);
+        
+        for (let i = 0; i < text.text.length; i++) {
+            if (this.isValidCell(grid, y, x + i)) {
+                grid[y][x + i] = text.text[i];
+            }
+        }
+    }
+    
+    drawArrowHeads(grid, arrow, toGridX, toGridY) {
+        const endX = toGridX(arrow.endX);
+        const endY = toGridY(arrow.endY);
+        
+        let prevX, prevY;
+        if (arrow.bendX !== undefined) {
+            prevX = toGridX(arrow.bendX);
+            prevY = toGridY(arrow.bendY);
+        } else {
+            prevX = toGridX(arrow.startX);
+            prevY = toGridY(arrow.startY);
+        }
+        
+        const dx = endX - prevX;
+        const dy = endY - prevY;
+        
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // Horizontal arrow
+            if (this.isValidCell(grid, endY, endX)) {
+                grid[endY][endX] = dx > 0 ? '>' : '<';
+            }
+        } else {
+            // Vertical arrow
+            if (this.isValidCell(grid, endY, endX)) {
+                grid[endY][endX] = dy > 0 ? 'v' : '^';
+            }
+        }
+    }
+    
+    isValidCell(grid, y, x) {
+        return y >= 0 && y < grid.length && x >= 0 && x < grid[0].length;
     }
 }

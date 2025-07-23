@@ -137,10 +137,23 @@ export class ModalManager {
     
     showExportModal(asciiText) {
         const modal = document.getElementById('export-modal');
-        const exportPreview = document.getElementById('export-preview'); // Changed from export-textarea
+        const exportPreview = document.getElementById('export-preview');
         if (modal && exportPreview) {
             modal.style.display = 'flex';
-            exportPreview.textContent = asciiText; // Use textContent for div
+            // Auto-load ASCII Basic preview
+            if (this.app.exportManager) {
+                const basicAscii = this.app.exportManager.exportToASCII(false); // false = basic ASCII
+                exportPreview.textContent = basicAscii;
+            }
+            // Reset button states
+            const formatButtons = document.querySelectorAll('[data-format]');
+            formatButtons.forEach(btn => {
+                if (btn.dataset.format === 'ascii-basic') {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
         }
     }
     
@@ -180,11 +193,17 @@ export class ModalManager {
         const exportPreview = document.getElementById('export-preview'); // Changed from export-textarea
         if (exportPreview) {
             const text = exportPreview.textContent;
-            const blob = new Blob([text], { type: 'text/plain' });
+            // Check which format is active
+            const activeFormat = document.querySelector('[data-format].active');
+            const isExtended = activeFormat && activeFormat.dataset.format === 'ascii-extended';
+            
+            // Add UTF-8 BOM for extended ASCII to ensure proper encoding
+            const finalText = isExtended ? '\uFEFF' + text : text;
+            const blob = new Blob([finalText], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'ascii-drawing.txt';
+            a.download = isExtended ? 'ascii-drawing-unicode.txt' : 'ascii-drawing.txt';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
