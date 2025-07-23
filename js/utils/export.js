@@ -256,4 +256,138 @@ export class ExportManager {
     isValidCell(grid, y, x) {
         return y >= 0 && y < grid.length && x >= 0 && x < grid[0].length;
     }
+    
+    exportToPNG() {
+        // Create a canvas for the PNG export
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (this.app.elements.length === 0) {
+            canvas.width = 400;
+            canvas.height = 300;
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#666';
+            ctx.font = '16px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('No drawing to export', 200, 150);
+            return canvas;
+        }
+        
+        // Find bounds with padding
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        this.app.elements.forEach(el => {
+            if (el.type === 'text') {
+                const fontSize = el.fontSize || 16;
+                ctx.font = `${fontSize}px monospace`;
+                const textWidth = ctx.measureText(el.text).width;
+                minX = Math.min(minX, el.x);
+                minY = Math.min(minY, el.y - fontSize);
+                maxX = Math.max(maxX, el.x + textWidth);
+                maxY = Math.max(maxY, el.y + 10);
+            } else if (el.type === 'box') {
+                minX = Math.min(minX, el.startX, el.endX);
+                minY = Math.min(minY, el.startY, el.endY);
+                maxX = Math.max(maxX, el.startX, el.endX);
+                maxY = Math.max(maxY, el.startY, el.endY);
+            } else {
+                minX = Math.min(minX, el.startX, el.endX);
+                minY = Math.min(minY, el.startY, el.endY);
+                maxX = Math.max(maxX, el.startX, el.endX);
+                maxY = Math.max(maxY, el.startY, el.endY);
+                
+                if (el.bendX !== undefined) {
+                    minX = Math.min(minX, el.bendX);
+                    minY = Math.min(minY, el.bendY);
+                    maxX = Math.max(maxX, el.bendX);
+                    maxY = Math.max(maxY, el.bendY);
+                }
+            }
+        });
+        
+        // Add padding
+        const padding = 40;
+        minX -= padding;
+        minY -= padding;
+        maxX += padding;
+        maxY += padding;
+        
+        // Set canvas size
+        canvas.width = maxX - minX;
+        canvas.height = maxY - minY;
+        
+        // Set background
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Translate to account for bounds
+        ctx.translate(-minX, -minY);
+        
+        // Set drawing styles
+        ctx.strokeStyle = '#ffffff';
+        ctx.fillStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'square';
+        ctx.lineJoin = 'miter';
+        
+        // Draw all elements
+        this.app.elements.forEach(el => {
+            if (el.type === 'line' || el.type === 'arrow') {
+                ctx.beginPath();
+                ctx.moveTo(el.startX, el.startY);
+                
+                if (el.bendX !== undefined && el.bendY !== undefined) {
+                    ctx.lineTo(el.bendX, el.bendY);
+                    ctx.lineTo(el.endX, el.endY);
+                } else {
+                    ctx.lineTo(el.endX, el.endY);
+                }
+                
+                ctx.stroke();
+                
+                // Draw arrow head
+                if (el.type === 'arrow') {
+                    const angle = Math.atan2(
+                        el.endY - (el.bendY !== undefined ? el.bendY : el.startY),
+                        el.endX - (el.bendX !== undefined ? el.bendX : el.startX)
+                    );
+                    const arrowLength = 15;
+                    const arrowAngle = Math.PI / 6;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(el.endX, el.endY);
+                    ctx.lineTo(
+                        el.endX - arrowLength * Math.cos(angle - arrowAngle),
+                        el.endY - arrowLength * Math.sin(angle - arrowAngle)
+                    );
+                    ctx.moveTo(el.endX, el.endY);
+                    ctx.lineTo(
+                        el.endX - arrowLength * Math.cos(angle + arrowAngle),
+                        el.endY - arrowLength * Math.sin(angle + arrowAngle)
+                    );
+                    ctx.stroke();
+                }
+            } else if (el.type === 'box') {
+                const x = Math.min(el.startX, el.endX);
+                const y = Math.min(el.startY, el.endY);
+                const width = Math.abs(el.endX - el.startX);
+                const height = Math.abs(el.endY - el.startY);
+                ctx.strokeRect(x, y, width, height);
+            } else if (el.type === 'text') {
+                const fontSize = el.fontSize || 16;
+                ctx.font = `${fontSize}px monospace`;
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillText(el.text, el.x, el.y);
+            }
+        });
+        
+        // Add a subtle watermark
+        ctx.globalAlpha = 0.3;
+        ctx.font = '12px monospace';
+        ctx.fillStyle = '#666';
+        ctx.fillText('asciilogic.com', canvas.width - minX - 80, canvas.height - minY - 10);
+        
+        return canvas;
+    }
 }

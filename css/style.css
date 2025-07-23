@@ -236,18 +236,6 @@ canvas {
     margin-bottom: 20px;
 }
 
-.export-preview {
-    background: var(--bg-tertiary);
-    padding: 20px;
-    border-radius: 4px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
-    line-height: 1.4;
-    white-space: pre;
-    overflow-x: auto;
-    min-height: 200px;
-}
-
 /* Utilities */
 .divider {
     height: 1px;
@@ -362,4 +350,31 @@ kbd {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--accent);
+}
+/* Export Preview */
+.export-preview {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: auto;
+    min-height: 200px;
+    max-height: 300px; /* Reduced from 400px to ensure buttons are visible */
+    margin: 10px 0;
+    position: relative;
+}
+
+.export-preview canvas {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    /* Ensure canvas doesn't overflow */
+    max-height: 280px;
+    object-fit: contain;
 }

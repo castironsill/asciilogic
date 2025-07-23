@@ -213,7 +213,7 @@
 
     <!-- Export Modal -->
     <div class="export-modal" id="export-modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <h2>Export Drawing</h2>
                 <button class="modal-close" id="close-modal">&times;</button>
@@ -222,9 +222,10 @@
             <div class="export-options">
                 <button class="control-btn active" data-format="ascii-basic">ASCII Basic</button>
                 <button class="control-btn" data-format="ascii-extended">ASCII Extended</button>
+                <button class="control-btn" data-format="png">PNG Image</button>
             </div>
             
-            <div class="export-preview" id="export-preview"></div>
+            <div class="export-preview" id="export-preview" style="flex: 1; min-height: 200px; max-height: 300px; overflow: auto; margin: 10px 0;"></div>
             
             <div style="margin-top: 20px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 4px; font-size: 13px;">
                 <div style="margin-bottom: 8px;">
@@ -240,6 +241,7 @@
             <div style="margin-top: 20px; display: flex; gap: 10px;">
                 <button class="control-btn" id="copy-to-clipboard">Copy to Clipboard</button>
                 <button class="control-btn" id="download-file">Download File</button>
+                <button class="control-btn" id="download-image" style="display: none;">Download PNG</button>
             </div>
         </div>
     </div>

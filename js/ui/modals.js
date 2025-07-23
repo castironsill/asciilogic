@@ -60,6 +60,7 @@ export class ModalManager {
         const exportClose = document.getElementById('close-modal'); // Fixed ID
         const exportCopy = document.getElementById('copy-to-clipboard'); // Fixed ID
         const exportDownload = document.getElementById('download-file'); // Fixed ID
+        const downloadImage = document.getElementById('download-image');
         
         if (exportClose) {
             exportClose.addEventListener('click', () => this.hideExportModal());
@@ -73,6 +74,10 @@ export class ModalManager {
             exportDownload.addEventListener('click', () => this.downloadExport());
         }
         
+        if (downloadImage) {
+            downloadImage.addEventListener('click', () => this.downloadImage());
+        }
+        
         // Format buttons in export modal
         const formatButtons = document.querySelectorAll('[data-format]');
         formatButtons.forEach(btn => {
@@ -80,12 +85,37 @@ export class ModalManager {
                 formatButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 const format = btn.dataset.format;
-                if (this.app.exportManager) {
-                    const asciiText = this.app.exportManager.exportToASCII(format === 'ascii-extended');
-                    const exportPreview = document.getElementById('export-preview');
-                    if (exportPreview) {
-                        exportPreview.textContent = asciiText;
+                
+                const exportPreview = document.getElementById('export-preview');
+                const copyBtn = document.getElementById('copy-to-clipboard');
+                const downloadBtn = document.getElementById('download-file');
+                const downloadImageBtn = document.getElementById('download-image');
+                
+                if (format === 'png') {
+                    // Show image preview
+                    if (this.app.exportManager) {
+                        const canvas = this.app.exportManager.exportToPNG();
+                        if (exportPreview) {
+                            exportPreview.innerHTML = '';
+                            exportPreview.appendChild(canvas);
+                        }
                     }
+                    // Show/hide appropriate buttons
+                    if (copyBtn) copyBtn.style.display = 'none';
+                    if (downloadBtn) downloadBtn.style.display = 'none';
+                    if (downloadImageBtn) downloadImageBtn.style.display = 'block';
+                } else {
+                    // Show ASCII preview
+                    if (this.app.exportManager) {
+                        const asciiText = this.app.exportManager.exportToASCII(format === 'ascii-extended');
+                        if (exportPreview) {
+                            exportPreview.textContent = asciiText;
+                        }
+                    }
+                    // Show/hide appropriate buttons
+                    if (copyBtn) copyBtn.style.display = 'block';
+                    if (downloadBtn) downloadBtn.style.display = 'block';
+                    if (downloadImageBtn) downloadImageBtn.style.display = 'none';
                 }
             });
         });
@@ -208,6 +238,25 @@ export class ModalManager {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+    }
+    
+    downloadImage() {
+        const exportPreview = document.getElementById('export-preview');
+        if (exportPreview) {
+            const canvas = exportPreview.querySelector('canvas');
+            if (canvas) {
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'ascii-drawing.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 'image/png');
+            }
         }
     }
 }
