@@ -141,7 +141,9 @@ This project is open source and available under the MIT License.
 
 ## 🙏 Acknowledgments
 
-Built with vanilla JavaScript for maximum performance and compatibility. Designed for engineers and developers who need quick, clean ASCII diagrams.
+- Inspired by [ASCIIFlow](https://asciiflow.com) - a fantastic ASCII diagram tool
+- Built with vanilla JavaScript for maximum performance and compatibility
+- Designed for engineers and developers who need quick, clean ASCII diagrams
 
 ---
 
