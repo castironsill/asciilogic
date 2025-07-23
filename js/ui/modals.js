@@ -91,6 +91,9 @@ export class ModalManager {
                 const downloadBtn = document.getElementById('download-file');
                 const downloadImageBtn = document.getElementById('download-image');
                 
+                // Clear filename when switching formats (optional - remove if you want to keep it)
+                // document.getElementById('export-filename').value = '';
+                
                 if (format === 'png') {
                     // Show image preview
                     if (this.app.exportManager) {

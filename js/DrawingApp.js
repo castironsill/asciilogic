@@ -273,6 +273,16 @@ export class DrawingApp {
             return;
         }
         
+        const exportModal = document.getElementById('export-modal');
+        if (exportModal && exportModal.style.display === 'flex') {
+            return; // Don't process shortcuts when export modal is open
+        }
+        
+        // Check if user is typing in any input field
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+        
         if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
             e.preventDefault();
             this.modalManager.showImportModal();
@@ -287,8 +297,9 @@ export class DrawingApp {
             't': 'text'
         };
         
-        if (shortcuts[e.key.toLowerCase()]) {
-            document.querySelector(`[data-tool="${shortcuts[e.key.toLowerCase()]}"]`).click();
+        if (e.key && shortcuts[e.key.toLowerCase()]) {
+            const button = document.querySelector(`[data-tool="${shortcuts[e.key.toLowerCase()]}"]`);
+            if (button) button.click();
         }
         
         if (e.ctrlKey || e.metaKey) {

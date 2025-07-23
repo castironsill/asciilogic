@@ -258,19 +258,23 @@ export class ExportManager {
     }
     
     exportToPNG() {
-        // Create a canvas for the PNG export
+        // Create a canvas for the PNG export at 2x resolution for higher quality
+        const scale = 2; // 2x resolution for retina quality
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
         if (this.app.elements.length === 0) {
-            canvas.width = 400;
-            canvas.height = 300;
+            canvas.width = 800; // 2x of 400
+            canvas.height = 600; // 2x of 300
+            ctx.scale(scale, scale);
             ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, 400, 300);
             ctx.fillStyle = '#666';
             ctx.font = '16px monospace';
             ctx.textAlign = 'center';
             ctx.fillText('No drawing to export', 200, 150);
+            canvas.style.width = '400px';
+            canvas.style.height = '300px';
             return canvas;
         }
         
@@ -313,23 +317,36 @@ export class ExportManager {
         maxX += padding;
         maxY += padding;
         
-        // Set canvas size
-        canvas.width = maxX - minX;
-        canvas.height = maxY - minY;
+        // Set canvas size at 2x resolution
+        const width = maxX - minX;
+        const height = maxY - minY;
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        
+        // Set display size (CSS pixels)
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        
+        // Scale context for 2x resolution
+        ctx.scale(scale, scale);
         
         // Set background
         ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, width, height);
         
         // Translate to account for bounds
         ctx.translate(-minX, -minY);
         
-        // Set drawing styles
+        // Set drawing styles with better quality
         ctx.strokeStyle = '#ffffff';
         ctx.fillStyle = '#ffffff';
         ctx.lineWidth = 2;
-        ctx.lineCap = 'square';
-        ctx.lineJoin = 'miter';
+        ctx.lineCap = 'round'; // Changed from 'square' for smoother lines
+        ctx.lineJoin = 'round'; // Changed from 'miter' for smoother corners
+        
+        // Enable anti-aliasing
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         
         // Draw all elements
         this.app.elements.forEach(el => {
@@ -386,7 +403,7 @@ export class ExportManager {
         ctx.globalAlpha = 0.3;
         ctx.font = '12px monospace';
         ctx.fillStyle = '#666';
-        ctx.fillText('asciilogic.com', canvas.width - minX - 80, canvas.height - minY - 10);
+        ctx.fillText('asciilogic.com', width - 90, height - 10);
         
         return canvas;
     }
