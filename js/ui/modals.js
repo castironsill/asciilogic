@@ -107,6 +107,18 @@ export class ModalManager {
                     if (copyBtn) copyBtn.style.display = 'none';
                     if (downloadBtn) downloadBtn.style.display = 'none';
                     if (downloadImageBtn) downloadImageBtn.style.display = 'block';
+                } else if (format === 'dxf') {
+                    // Show DXF preview
+                    if (this.app.exportManager) {
+                        const dxfText = this.app.exportManager.exportToDXF();
+                        if (exportPreview) {
+                            exportPreview.textContent = dxfText;
+                        }
+                    }
+                    // Show/hide appropriate buttons
+                    if (copyBtn) copyBtn.style.display = 'block';
+                    if (downloadBtn) downloadBtn.style.display = 'block';
+                    if (downloadImageBtn) downloadImageBtn.style.display = 'none';
                 } else {
                     // Show ASCII preview
                     if (this.app.exportManager) {
@@ -230,26 +242,39 @@ export class ModalManager {
             const text = exportPreview.textContent;
             // Check which format is active
             const activeFormat = document.querySelector('[data-format].active');
-            const isExtended = activeFormat && activeFormat.dataset.format === 'ascii-extended';
+            const formatType = activeFormat ? activeFormat.dataset.format : 'ascii-basic';
             
             // Get custom filename or generate default
             const customFilename = filenameInput ? filenameInput.value.trim() : '';
             const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
             
             let filename;
-            if (customFilename) {
-                // Add .txt extension if not present
-                filename = customFilename.endsWith('.txt') ? customFilename : customFilename + '.txt';
+            let mimeType = 'text/plain;charset=utf-8';
+            let finalText = text;
+            
+            if (formatType === 'dxf') {
+                // DXF export
+                if (customFilename) {
+                    filename = customFilename.endsWith('.dxf') ? customFilename : customFilename + '.dxf';
+                } else {
+                    filename = `ascii-drawing_${date}.dxf`;
+                }
+                mimeType = 'application/dxf';
             } else {
-                // Auto-generated names with date
-                filename = isExtended ? `ascii-drawing-unicode_${date}.txt` : `ascii-drawing_${date}.txt`;
+                // ASCII export
+                const isExtended = formatType === 'ascii-extended';
+                if (customFilename) {
+                    filename = customFilename.endsWith('.txt') ? customFilename : customFilename + '.txt';
+                } else {
+                    filename = isExtended ? `ascii-drawing-unicode_${date}.txt` : `ascii-drawing_${date}.txt`;
+                }
+                // Add UTF-8 BOM for extended ASCII
+                finalText = isExtended ? '\uFEFF' + text : text;
             }
             
             console.log('Downloading with filename:', filename); // Debug log
             
-            // Add UTF-8 BOM for extended ASCII to ensure proper encoding
-            const finalText = isExtended ? '\uFEFF' + text : text;
-            const blob = new Blob([finalText], { type: 'text/plain;charset=utf-8' });
+            const blob = new Blob([finalText], { type: mimeType });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

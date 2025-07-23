@@ -407,4 +407,107 @@ export class ExportManager {
         
         return canvas;
     }
+    
+    exportToDXF() {
+        // Scale factor: 1 pixel = 0.1 units in CAD (so 100 pixels = 10 units)
+        // This makes drawings more reasonable in size
+        const scale = 0.1;
+        
+        // DXF header
+        let dxf = '0\nSECTION\n2\nHEADER\n0\nENDSEC\n';
+        
+        // Start entities section
+        dxf += '0\nSECTION\n2\nENTITIES\n';
+        
+        // Export each element
+        this.app.elements.forEach(el => {
+            if (el.type === 'line' || el.type === 'arrow') {
+                // Export line segments
+                if (el.bendX !== undefined && el.bendY !== undefined) {
+                    // First segment
+                    dxf += this.dxfLine(
+                        el.startX * scale, 
+                        el.startY * scale, 
+                        el.bendX * scale, 
+                        el.bendY * scale
+                    );
+                    // Second segment
+                    dxf += this.dxfLine(
+                        el.bendX * scale, 
+                        el.bendY * scale, 
+                        el.endX * scale, 
+                        el.endY * scale
+                    );
+                } else {
+                    // Single line
+                    dxf += this.dxfLine(
+                        el.startX * scale, 
+                        el.startY * scale, 
+                        el.endX * scale, 
+                        el.endY * scale
+                    );
+                }
+                
+                // Add arrowhead if needed
+                if (el.type === 'arrow') {
+                    const angle = Math.atan2(
+                        el.endY - (el.bendY !== undefined ? el.bendY : el.startY),
+                        el.endX - (el.bendX !== undefined ? el.bendX : el.startX)
+                    );
+                    const arrowLength = 15 * scale;
+                    const arrowAngle = Math.PI / 6;
+                    
+                    // Arrow lines
+                    dxf += this.dxfLine(
+                        el.endX * scale,
+                        el.endY * scale,
+                        (el.endX - 15 * Math.cos(angle - arrowAngle)) * scale,
+                        (el.endY - 15 * Math.sin(angle - arrowAngle)) * scale
+                    );
+                    dxf += this.dxfLine(
+                        el.endX * scale,
+                        el.endY * scale,
+                        (el.endX - 15 * Math.cos(angle + arrowAngle)) * scale,
+                        (el.endY - 15 * Math.sin(angle + arrowAngle)) * scale
+                    );
+                }
+            } else if (el.type === 'box') {
+                // Export box as four lines
+                const minX = Math.min(el.startX, el.endX) * scale;
+                const maxX = Math.max(el.startX, el.endX) * scale;
+                const minY = Math.min(el.startY, el.endY) * scale;
+                const maxY = Math.max(el.startY, el.endY) * scale;
+                
+                dxf += this.dxfLine(minX, minY, maxX, minY); // Top
+                dxf += this.dxfLine(maxX, minY, maxX, maxY); // Right
+                dxf += this.dxfLine(maxX, maxY, minX, maxY); // Bottom
+                dxf += this.dxfLine(minX, maxY, minX, minY); // Left
+            } else if (el.type === 'text') {
+                // Export text
+                dxf += this.dxfText(
+                    el.x * scale, 
+                    el.y * scale, 
+                    el.text, 
+                    (el.fontSize || 16) * scale
+                );
+            }
+        });
+        
+        // End entities section
+        dxf += '0\nENDSEC\n';
+        
+        // End of file
+        dxf += '0\nEOF\n';
+        
+        return dxf;
+    }
+    
+    dxfLine(x1, y1, x2, y2) {
+        return `0\nLINE\n8\n0\n10\n${x1}\n20\n${y1}\n11\n${x2}\n21\n${y2}\n`;
+    }
+    
+    dxfText(x, y, text, fontSize) {
+        const height = fontSize * 0.8; // Approximate conversion
+        return `0\nTEXT\n8\n0\n10\n${x}\n20\n${y}\n40\n${height}\n1\n${text}\n`;
+    }
 }
