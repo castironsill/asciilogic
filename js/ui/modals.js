@@ -223,12 +223,29 @@ export class ModalManager {
     }
     
     downloadExport() {
-        const exportPreview = document.getElementById('export-preview'); // Changed from export-textarea
+        const exportPreview = document.getElementById('export-preview');
+        const filenameInput = document.getElementById('export-filename');
+        
         if (exportPreview) {
             const text = exportPreview.textContent;
             // Check which format is active
             const activeFormat = document.querySelector('[data-format].active');
             const isExtended = activeFormat && activeFormat.dataset.format === 'ascii-extended';
+            
+            // Get custom filename or generate default
+            const customFilename = filenameInput ? filenameInput.value.trim() : '';
+            const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            let filename;
+            if (customFilename) {
+                // Add .txt extension if not present
+                filename = customFilename.endsWith('.txt') ? customFilename : customFilename + '.txt';
+            } else {
+                // Auto-generated names with date
+                filename = isExtended ? `ascii-drawing-unicode_${date}.txt` : `ascii-drawing_${date}.txt`;
+            }
+            
+            console.log('Downloading with filename:', filename); // Debug log
             
             // Add UTF-8 BOM for extended ASCII to ensure proper encoding
             const finalText = isExtended ? '\uFEFF' + text : text;
@@ -236,7 +253,7 @@ export class ModalManager {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = isExtended ? 'ascii-drawing-unicode.txt' : 'ascii-drawing.txt';
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -246,19 +263,37 @@ export class ModalManager {
     
     downloadImage() {
         const exportPreview = document.getElementById('export-preview');
+        const filenameInput = document.getElementById('export-filename');
+        
         if (exportPreview) {
             const canvas = exportPreview.querySelector('canvas');
             if (canvas) {
+                // Get custom filename or generate default
+                const customFilename = filenameInput ? filenameInput.value.trim() : '';
+                const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+                
+                let filename;
+                if (customFilename) {
+                    // Add .png extension if not present
+                    filename = customFilename.endsWith('.png') ? customFilename : customFilename + '.png';
+                } else {
+                    // Auto-generated name with date
+                    filename = `ascii-drawing_${date}.png`;
+                }
+                
+                console.log('Downloading PNG with filename:', filename); // Debug log
+                
+                // Export at higher quality
                 canvas.toBlob((blob) => {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'ascii-drawing.png';
+                    a.download = filename;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-                }, 'image/png');
+                }, 'image/png', 1.0); // 1.0 = maximum quality
             }
         }
     }
