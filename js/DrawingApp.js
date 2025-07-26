@@ -8,6 +8,7 @@ import { Storage } from './core/storage.js';
 import { Renderer } from './core/render.js';
 import { ModalManager } from './ui/modals.js';
 import { ControlsManager } from './ui/controls.js';
+import { LineStyleManager } from './utils/lineStyles.js';
 import { notifications } from './ui/notifications.js';
 import { isPointNearElement, isElementInBox, getNormalizedBox, distanceToLineSegment } from './utils/geometry.js';
 
@@ -89,6 +90,20 @@ export class DrawingApp {
     }
     
     initializeComponents() {
+        // Create event bus first
+        this.eventBus = {
+            listeners: {},
+            on(event, callback) {
+                if (!this.listeners[event]) this.listeners[event] = [];
+                this.listeners[event].push(callback);
+            },
+            emit(event, data) {
+                if (this.listeners[event]) {
+                    this.listeners[event].forEach(cb => cb(data));
+                }
+            }
+        };
+        
         this.grid = new Grid(this);
         this.exportManager = new ExportManager(this);
         this.history = new History(this);
@@ -96,6 +111,7 @@ export class DrawingApp {
         this.renderer = new Renderer(this);
         this.modalManager = new ModalManager(this);
         this.controlsManager = new ControlsManager(this);
+        this.lineStyleManager = new LineStyleManager(this);
     }
     
     setupTools() {
@@ -137,6 +153,27 @@ export class DrawingApp {
                 this.tempElement.type = 'arrow';
             }
         };
+        
+        // Modify line/arrow tool to include line style
+        const originalLineTool = this.tools.line;
+        const originalLineMouseUp = originalLineTool.handleMouseUp.bind(originalLineTool);
+        originalLineTool.handleMouseUp = function(x, y, e) {
+            // Add line style to temp element before finalizing
+            if (this.tempElement) {
+                this.tempElement.lineStyle = this.app.lineStyleManager.getLineStyle();
+            }
+            originalLineMouseUp(x, y, e);
+        };
+        
+        // Same for arrow tool
+        const originalArrowMouseUp = arrowTool.handleMouseUp.bind(arrowTool);
+        arrowTool.handleMouseUp = function(x, y, e) {
+            // Add line style to temp element before finalizing
+            if (this.tempElement) {
+                this.tempElement.lineStyle = this.app.lineStyleManager.getLineStyle();
+            }
+            originalArrowMouseUp(x, y, e);
+        };
     }
     
     setupEventListeners() {
@@ -146,6 +183,9 @@ export class DrawingApp {
                 document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.currentTool = btn.dataset.tool;
+                
+                // Emit tool change event
+                this.eventBus.emit('toolChanged', this.currentTool);
                 
                 if (this.currentTool !== 'select') {
                     this.selectedElement = null;
@@ -614,6 +654,10 @@ export class DrawingApp {
         
         // Draw temp element
         if (this.tempElement) {
+            // Apply line style to temp element if it's a line or arrow
+            if ((this.tempElement.type === 'line' || this.tempElement.type === 'arrow') && !this.tempElement.lineStyle) {
+                this.tempElement.lineStyle = this.lineStyleManager.getLineStyle();
+            }
             this.renderer.drawElement(ctx, this.tempElement, true);
         }
         
@@ -1071,7 +1115,8 @@ export class DrawingApp {
             startX: finalStartX * this.gridSize * scaleX,
             startY: y * this.gridSize * scaleY,
             endX: (finalEndX + 1) * this.gridSize * scaleX,
-            endY: y * this.gridSize * scaleY
+            endY: y * this.gridSize * scaleY,
+            lineStyle: isDashed ? 'dashed' : 'solid'
         });
         
         for (let vx = startX; vx <= endX; vx++) {

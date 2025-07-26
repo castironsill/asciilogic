@@ -29,6 +29,17 @@ export class Renderer {
     }
     
     drawLine(ctx, element) {
+        ctx.save();
+        
+        // Apply line style
+        if (element.lineStyle === 'dashed') {
+            ctx.setLineDash([10, 5]); // 10px dash, 5px gap
+        } else if (element.lineStyle === 'dotted') {
+            ctx.setLineDash([2, 4]); // 2px dot, 4px gap
+        } else {
+            ctx.setLineDash([]); // Solid line (default)
+        }
+        
         ctx.beginPath();
         ctx.moveTo(element.startX, element.startY);
         
@@ -40,9 +51,17 @@ export class Renderer {
         }
         
         ctx.stroke();
+        
+        // Reset line dash
+        ctx.setLineDash([]);
+        ctx.restore();
     }
     
     drawArrowHead(ctx, element) {
+        // Arrow heads are always solid
+        ctx.save();
+        ctx.setLineDash([]); // Ensure arrow heads are solid
+        
         const size = 10;
         let angle;
         
@@ -64,6 +83,8 @@ export class Renderer {
             element.endY - size * Math.sin(angle + Math.PI / 6)
         );
         ctx.stroke();
+        
+        ctx.restore();
     }
     
     drawBox(ctx, element) {

@@ -540,7 +540,15 @@ export class ExportManager {
                     path += ` L ${el.endX} ${el.endY}`;
                 }
                 
-                svg += `\n    <path d="${path}" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"${transform}/>`;
+                // Add stroke-dasharray for line styles
+                let strokeDasharray = '';
+                if (el.lineStyle === 'dashed') {
+                    strokeDasharray = ' stroke-dasharray="10,5"';
+                } else if (el.lineStyle === 'dotted') {
+                    strokeDasharray = ' stroke-dasharray="2,4"';
+                }
+                
+                svg += `\n    <path d="${path}" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"${strokeDasharray}${transform}/>`;
                 
                 // Draw arrow head if needed
                 if (el.type === 'arrow') {
@@ -596,8 +604,37 @@ export class ExportManager {
         // This makes drawings more reasonable in size
         const scale = 0.1;
         
-        // DXF header
+        // Find bounds to determine the flip point
+        let maxY = -Infinity;
+        this.app.elements.forEach(el => {
+            if (el.type === 'text') {
+                maxY = Math.max(maxY, el.y);
+            } else if (el.type === 'box') {
+                maxY = Math.max(maxY, el.startY, el.endY);
+            } else {
+                maxY = Math.max(maxY, el.startY, el.endY);
+                if (el.bendY !== undefined) {
+                    maxY = Math.max(maxY, el.bendY);
+                }
+            }
+        });
+        
+        // Helper function to flip Y coordinate
+        const flipY = (y) => (maxY - y) * scale;
+        
+        // DXF header with line type definitions
         let dxf = '0\nSECTION\n2\nHEADER\n0\nENDSEC\n';
+        
+        // Add line type table
+        dxf += '0\nSECTION\n2\nTABLES\n';
+        dxf += '0\nTABLE\n2\nLTYPE\n';
+        
+        // Define line types
+        dxf += '0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0\n';
+        dxf += '0\nLTYPE\n2\nDASHED\n70\n0\n3\nDashed __ __ __ __ __\n72\n65\n73\n2\n40\n0.75\n49\n0.5\n49\n-0.25\n';
+        dxf += '0\nLTYPE\n2\nDOT\n70\n0\n3\nDotted . . . . . . .\n72\n65\n73\n2\n40\n0.25\n49\n0.0\n49\n-0.25\n';
+        
+        dxf += '0\nENDTAB\n0\nENDSEC\n';
         
         // Start entities section
         dxf += '0\nSECTION\n2\nENTITIES\n';
@@ -605,71 +642,77 @@ export class ExportManager {
         // Export each element
         this.app.elements.forEach(el => {
             if (el.type === 'line' || el.type === 'arrow') {
-                // Export line segments
+                const lineStyle = el.lineStyle || 'solid';
+                // Export line segments with flipped Y
                 if (el.bendX !== undefined && el.bendY !== undefined) {
                     // First segment
                     dxf += this.dxfLine(
                         el.startX * scale, 
-                        el.startY * scale, 
+                        flipY(el.startY), 
                         el.bendX * scale, 
-                        el.bendY * scale
+                        flipY(el.bendY),
+                        lineStyle
                     );
                     // Second segment
                     dxf += this.dxfLine(
                         el.bendX * scale, 
-                        el.bendY * scale, 
+                        flipY(el.bendY), 
                         el.endX * scale, 
-                        el.endY * scale
+                        flipY(el.endY),
+                        lineStyle
                     );
                 } else {
                     // Single line
                     dxf += this.dxfLine(
                         el.startX * scale, 
-                        el.startY * scale, 
+                        flipY(el.startY), 
                         el.endX * scale, 
-                        el.endY * scale
+                        flipY(el.endY),
+                        lineStyle
                     );
                 }
                 
                 // Add arrowhead if needed
                 if (el.type === 'arrow') {
                     const angle = Math.atan2(
-                        el.endY - (el.bendY !== undefined ? el.bendY : el.startY),
+                        (el.endY - (el.bendY !== undefined ? el.bendY : el.startY)),
                         el.endX - (el.bendX !== undefined ? el.bendX : el.startX)
                     );
                     const arrowLength = 15 * scale;
                     const arrowAngle = Math.PI / 6;
                     
-                    // Arrow lines
+                    // Arrow lines (always solid) - with flipped Y
                     dxf += this.dxfLine(
                         el.endX * scale,
-                        el.endY * scale,
+                        flipY(el.endY),
                         (el.endX - 15 * Math.cos(angle - arrowAngle)) * scale,
-                        (el.endY - 15 * Math.sin(angle - arrowAngle)) * scale
+                        flipY(el.endY - 15 * Math.sin(angle - arrowAngle)),
+                        'solid'
                     );
                     dxf += this.dxfLine(
                         el.endX * scale,
-                        el.endY * scale,
+                        flipY(el.endY),
                         (el.endX - 15 * Math.cos(angle + arrowAngle)) * scale,
-                        (el.endY - 15 * Math.sin(angle + arrowAngle)) * scale
+                        flipY(el.endY - 15 * Math.sin(angle + arrowAngle)),
+                        'solid'
                     );
                 }
             } else if (el.type === 'box') {
-                // Export box as four lines
+                // Export box as four lines with flipped Y
                 const minX = Math.min(el.startX, el.endX) * scale;
                 const maxX = Math.max(el.startX, el.endX) * scale;
-                const minY = Math.min(el.startY, el.endY) * scale;
-                const maxY = Math.max(el.startY, el.endY) * scale;
+                const minY = flipY(Math.max(el.startY, el.endY)); // Note: max becomes min after flip
+                const maxY = flipY(Math.min(el.startY, el.endY)); // Note: min becomes max after flip
                 
-                dxf += this.dxfLine(minX, minY, maxX, minY); // Top
+                dxf += this.dxfLine(minX, minY, maxX, minY); // Bottom (was top)
                 dxf += this.dxfLine(maxX, minY, maxX, maxY); // Right
-                dxf += this.dxfLine(maxX, maxY, minX, maxY); // Bottom
+                dxf += this.dxfLine(maxX, maxY, minX, maxY); // Top (was bottom)
                 dxf += this.dxfLine(minX, maxY, minX, minY); // Left
             } else if (el.type === 'text') {
-                // Export text
+                // Export text with flipped Y
                 dxf += this.dxfText(
                     el.x * scale, 
-                    el.y * scale, 
+                    flipY(el.y), 
                     el.text, 
                     (el.fontSize || 16) * scale
                 );
@@ -685,8 +728,21 @@ export class ExportManager {
         return dxf;
     }
     
-    dxfLine(x1, y1, x2, y2) {
-        return `0\nLINE\n8\n0\n10\n${x1}\n20\n${y1}\n11\n${x2}\n21\n${y2}\n`;
+    dxfLine(x1, y1, x2, y2, lineStyle = 'solid') {
+        const lineType = this.getLineTypeName(lineStyle);
+        return `0\nLINE\n8\n0\n6\n${lineType}\n10\n${x1}\n20\n${y1}\n11\n${x2}\n21\n${y2}\n`;
+    }
+    
+    getLineTypeName(style) {
+        switch (style) {
+            case 'dashed':
+                return 'DASHED';
+            case 'dotted':
+                return 'DOT';
+            case 'solid':
+            default:
+                return 'CONTINUOUS';
+        }
     }
     
     dxfText(x, y, text, fontSize) {
