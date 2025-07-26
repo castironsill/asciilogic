@@ -72,6 +72,8 @@ export class ExportManager {
     }
     
     generateASCIIDiagram(useExtended) {
+        // Use a default grid size if current is 0
+        const gridSize = this.app.gridSize || 10;
         
         // Find bounds
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -118,15 +120,15 @@ export class ExportManager {
         const scaleY = 2.4; // Vertical spacing between lines (increased from 1.8)
         
         // Calculate grid size with aspect ratio correction
-        const width = Math.ceil((maxX - minX) / (this.app.gridSize * scaleX));
-        const height = Math.ceil((maxY - minY) / (this.app.gridSize * scaleY));
+        const width = Math.ceil((maxX - minX) / (gridSize * scaleX));
+        const height = Math.ceil((maxY - minY) / (gridSize * scaleY));
         
         // Create grid
         const grid = Array(height).fill(null).map(() => Array(width).fill(' '));
         
         // Helper to convert canvas coordinates to grid coordinates
-        const toGridX = (x) => Math.round((x - minX) / (this.app.gridSize * scaleX));
-        const toGridY = (y) => Math.round((y - minY) / (this.app.gridSize * scaleY));
+        const toGridX = (x) => Math.round((x - minX) / (gridSize * scaleX));
+        const toGridY = (y) => Math.round((y - minY) / (gridSize * scaleY));
         
         // Characters for drawing
         const chars = useExtended ? {
@@ -330,48 +332,15 @@ export class ExportManager {
             return canvas;
         }
         
-        // Find bounds with padding
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        
-        this.app.elements.forEach(el => {
-            if (el.type === 'text') {
-                const fontSize = el.fontSize || 16;
-                ctx.font = `${fontSize}px monospace`;
-                const textWidth = ctx.measureText(el.text).width;
-                minX = Math.min(minX, el.x);
-                minY = Math.min(minY, el.y - fontSize);
-                maxX = Math.max(maxX, el.x + textWidth);
-                maxY = Math.max(maxY, el.y + 10);
-            } else if (el.type === 'box') {
-                minX = Math.min(minX, el.startX, el.endX);
-                minY = Math.min(minY, el.startY, el.endY);
-                maxX = Math.max(maxX, el.startX, el.endX);
-                maxY = Math.max(maxY, el.startY, el.endY);
-            } else {
-                minX = Math.min(minX, el.startX, el.endX);
-                minY = Math.min(minY, el.startY, el.endY);
-                maxX = Math.max(maxX, el.startX, el.endX);
-                maxY = Math.max(maxY, el.startY, el.endY);
-                
-                if (el.bendX !== undefined) {
-                    minX = Math.min(minX, el.bendX);
-                    minY = Math.min(minY, el.bendY);
-                    maxX = Math.max(maxX, el.bendX);
-                    maxY = Math.max(maxY, el.bendY);
-                }
-            }
-        });
+        // Get bounds from renderer
+        const bounds = this.app.renderer.getContentBounds();
         
         // Add padding
         const padding = 40;
-        minX -= padding;
-        minY -= padding;
-        maxX += padding;
-        maxY += padding;
+        const width = bounds.width + (padding * 2);
+        const height = bounds.height + (padding * 2);
         
         // Set canvas size at 2x resolution
-        const width = maxX - minX;
-        const height = maxY - minY;
         canvas.width = width * scale;
         canvas.height = height * scale;
         
@@ -387,75 +356,22 @@ export class ExportManager {
         ctx.fillRect(0, 0, width, height);
         
         // Translate to account for bounds
-        ctx.translate(-minX, -minY);
-        
-        // Set drawing styles with better quality
-        ctx.strokeStyle = '#ffffff';
-        ctx.fillStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round'; // Changed from 'square' for smoother lines
-        ctx.lineJoin = 'round'; // Changed from 'miter' for smoother corners
+        ctx.translate(padding - bounds.minX, padding - bounds.minY);
         
         // Enable anti-aliasing
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         
-        // Draw all elements
+        // Draw all elements using the renderer's drawElement method
         this.app.elements.forEach(el => {
-            if (el.type === 'line' || el.type === 'arrow') {
-                ctx.beginPath();
-                ctx.moveTo(el.startX, el.startY);
-                
-                if (el.bendX !== undefined && el.bendY !== undefined) {
-                    ctx.lineTo(el.bendX, el.bendY);
-                    ctx.lineTo(el.endX, el.endY);
-                } else {
-                    ctx.lineTo(el.endX, el.endY);
-                }
-                
-                ctx.stroke();
-                
-                // Draw arrow head
-                if (el.type === 'arrow') {
-                    const angle = Math.atan2(
-                        el.endY - (el.bendY !== undefined ? el.bendY : el.startY),
-                        el.endX - (el.bendX !== undefined ? el.bendX : el.startX)
-                    );
-                    const arrowLength = 15;
-                    const arrowAngle = Math.PI / 6;
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(el.endX, el.endY);
-                    ctx.lineTo(
-                        el.endX - arrowLength * Math.cos(angle - arrowAngle),
-                        el.endY - arrowLength * Math.sin(angle - arrowAngle)
-                    );
-                    ctx.moveTo(el.endX, el.endY);
-                    ctx.lineTo(
-                        el.endX - arrowLength * Math.cos(angle + arrowAngle),
-                        el.endY - arrowLength * Math.sin(angle + arrowAngle)
-                    );
-                    ctx.stroke();
-                }
-            } else if (el.type === 'box') {
-                const x = Math.min(el.startX, el.endX);
-                const y = Math.min(el.startY, el.endY);
-                const width = Math.abs(el.endX - el.startX);
-                const height = Math.abs(el.endY - el.startY);
-                ctx.strokeRect(x, y, width, height);
-            } else if (el.type === 'text') {
-                const fontSize = el.fontSize || 16;
-                ctx.font = `${fontSize}px monospace`;
-                ctx.textBaseline = 'alphabetic';
-                ctx.fillText(el.text, el.x, el.y);
-            }
+            this.app.renderer.drawElement(ctx, el);
         });
         
         // Add a subtle watermark
         ctx.globalAlpha = 0.3;
         ctx.font = '12px monospace';
         ctx.fillStyle = '#666';
-        ctx.fillText('asciilogic.com', width - 90, height - 10);
+        ctx.fillText('asciilogic.com', width - 90 - padding + bounds.minX, height - 10 - padding + bounds.minY);
         
         return canvas;
     }
@@ -469,66 +385,49 @@ export class ExportManager {
             </svg>`;
         }
         
-        // Find bounds
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        // Get bounds from renderer
+        const bounds = this.app.renderer.getContentBounds();
         
-        // Temporary canvas context for text measurement
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
+        // Add padding
+        const padding = 40;
+        const width = bounds.width + (padding * 2);
+        const height = bounds.height + (padding * 2);
         
+        // Start building SVG
+        let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+        
+        // Add defs section for patterns
+        svg += '\n  <defs>';
+        
+        // Collect unique color/pattern combinations
+        const patternDefs = new Set();
+        
+        // First pass: collect all unique patterns needed
         this.app.elements.forEach(el => {
-            if (el.type === 'text') {
-                const fontSize = el.fontSize || 16;
-                tempCtx.font = `${fontSize}px monospace`;
-                const textWidth = tempCtx.measureText(el.text).width;
-                minX = Math.min(minX, el.x);
-                minY = Math.min(minY, el.y - fontSize);
-                maxX = Math.max(maxX, el.x + textWidth);
-                maxY = Math.max(maxY, el.y + 10);
-            } else if (el.type === 'box') {
-                minX = Math.min(minX, el.startX, el.endX);
-                minY = Math.min(minY, el.startY, el.endY);
-                maxX = Math.max(maxX, el.startX, el.endX);
-                maxY = Math.max(maxY, el.startY, el.endY);
-            } else {
-                minX = Math.min(minX, el.startX, el.endX);
-                minY = Math.min(minY, el.startY, el.endY);
-                maxX = Math.max(maxX, el.startX, el.endX);
-                maxY = Math.max(maxY, el.startY, el.endY);
-                
-                if (el.bendX !== undefined) {
-                    minX = Math.min(minX, el.bendX);
-                    minY = Math.min(minY, el.bendY);
-                    maxX = Math.max(maxX, el.bendX);
-                    maxY = Math.max(maxY, el.bendY);
+            if (el.type === 'box' && el.fill === 'pattern' && el.pattern !== 'none') {
+                const color = el.color || '#ffffff';
+                const patternId = `${el.pattern}-${color.replace('#', '')}`;
+                if (!patternDefs.has(patternId)) {
+                    patternDefs.add(patternId);
+                    svg += this.createColoredPatternDef(el.pattern, color, patternId);
                 }
             }
         });
         
-        // Add padding
-        const padding = 40;
-        minX -= padding;
-        minY -= padding;
-        maxX += padding;
-        maxY += padding;
-        
-        const width = maxX - minX;
-        const height = maxY - minY;
-        
-        // Start building SVG
-        let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+        svg += '\n  </defs>';
         
         // Add background
         svg += `\n  <rect width="${width}" height="${height}" fill="#1a1a1a"/>`;
         
         // Create a group with translation to handle bounds - or individual transforms
         if (groupElements) {
-            svg += `\n  <g transform="translate(${-minX}, ${-minY})">`;
+            svg += `\n  <g transform="translate(${padding - bounds.minX}, ${padding - bounds.minY})">`;
         }
         
         // Draw all elements
         this.app.elements.forEach(el => {
-            const transform = groupElements ? '' : ` transform="translate(${-minX}, ${-minY})"`;
+            const transform = groupElements ? '' : ` transform="translate(${padding - bounds.minX}, ${padding - bounds.minY})"`;
+            const color = el.color || '#ffffff';
             
             if (el.type === 'line' || el.type === 'arrow') {
                 // Draw line path
@@ -548,7 +447,7 @@ export class ExportManager {
                     strokeDasharray = ' stroke-dasharray="2,4"';
                 }
                 
-                svg += `\n    <path d="${path}" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"${strokeDasharray}${transform}/>`;
+                svg += `\n    <path d="${path}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"${strokeDasharray}${transform}/>`;
                 
                 // Draw arrow head if needed
                 if (el.type === 'arrow') {
@@ -564,14 +463,24 @@ export class ExportManager {
                     const x2 = el.endX - arrowLength * Math.cos(angle + arrowAngle);
                     const y2 = el.endY - arrowLength * Math.sin(angle + arrowAngle);
                     
-                    svg += `\n    <path d="M ${el.endX} ${el.endY} L ${x1} ${y1} M ${el.endX} ${el.endY} L ${x2} ${y2}" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"${transform}/>`;
+                    svg += `\n    <path d="M ${el.endX} ${el.endY} L ${x1} ${y1} M ${el.endX} ${el.endY} L ${x2} ${y2}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round"${transform}/>`;
                 }
             } else if (el.type === 'box') {
                 const x = Math.min(el.startX, el.endX);
                 const y = Math.min(el.startY, el.endY);
                 const rectWidth = Math.abs(el.endX - el.startX);
                 const rectHeight = Math.abs(el.endY - el.startY);
-                svg += `\n    <rect x="${x}" y="${y}" width="${rectWidth}" height="${rectHeight}" stroke="white" stroke-width="2" fill="none" stroke-linejoin="round"${transform}/>`;
+                
+                let fillAttr = 'fill="none"';
+                
+                if (el.fill === 'solid') {
+                    fillAttr = `fill="${color}" fill-opacity="0.3"`;
+                } else if (el.fill === 'pattern' && el.pattern !== 'none') {
+                    const patternId = `${el.pattern}-${color.replace('#', '')}`;
+                    fillAttr = `fill="url(#${patternId})"`;
+                }
+                
+                svg += `\n    <rect x="${x}" y="${y}" width="${rectWidth}" height="${rectHeight}" stroke="${color}" stroke-width="2" ${fillAttr} stroke-linejoin="round"${transform}/>`;
             } else if (el.type === 'text') {
                 const fontSize = el.fontSize || 16;
                 // Escape special characters in text
@@ -581,7 +490,7 @@ export class ExportManager {
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#039;');
-                svg += `\n    <text x="${el.x}" y="${el.y}" font-family="monospace" font-size="${fontSize}" fill="white"${transform}>${escapedText}</text>`;
+                svg += `\n    <text x="${el.x}" y="${el.y}" font-family="monospace" font-size="${fontSize}" fill="${color}"${transform}>${escapedText}</text>`;
             }
         });
         
@@ -597,6 +506,50 @@ export class ExportManager {
         svg += '\n</svg>';
         
         return svg;
+    }
+    
+    createColoredPatternDef(patternType, color, patternId) {
+        const opacity = '0.3';
+        
+        switch (patternType) {
+            case 'diagonal':
+                return `\n    <pattern id="${patternId}" patternUnits="userSpaceOnUse" width="8" height="8">
+      <path d="M0,8 L8,0" stroke="${color}" stroke-width="0.5" opacity="${opacity}" fill="none"/>
+    </pattern>`;
+                
+            case 'crosshatch':
+                return `\n    <pattern id="${patternId}" patternUnits="userSpaceOnUse" width="8" height="8">
+      <path d="M0,8 L8,0 M0,0 L8,8" stroke="${color}" stroke-width="0.5" opacity="${opacity}" fill="none"/>
+    </pattern>`;
+                
+            case 'horizontal':
+                return `\n    <pattern id="${patternId}" patternUnits="userSpaceOnUse" width="8" height="4">
+      <line x1="0" y1="2" x2="8" y2="2" stroke="${color}" stroke-width="0.5" opacity="${opacity}"/>
+    </pattern>`;
+                
+            case 'vertical':
+                return `\n    <pattern id="${patternId}" patternUnits="userSpaceOnUse" width="4" height="8">
+      <line x1="2" y1="0" x2="2" y2="8" stroke="${color}" stroke-width="0.5" opacity="${opacity}"/>
+    </pattern>`;
+                
+            case 'light':
+                return `\n    <pattern id="${patternId}" patternUnits="userSpaceOnUse" width="10" height="10">
+      <circle cx="5" cy="5" r="1" fill="${color}" opacity="${opacity}"/>
+    </pattern>`;
+                
+            case 'medium':
+                return `\n    <pattern id="${patternId}" patternUnits="userSpaceOnUse" width="8" height="8">
+      <circle cx="4" cy="4" r="1.5" fill="${color}" opacity="${opacity}"/>
+    </pattern>`;
+                
+            case 'dense':
+                return `\n    <pattern id="${patternId}" patternUnits="userSpaceOnUse" width="6" height="6">
+      <circle cx="3" cy="3" r="2" fill="${color}" opacity="${opacity}"/>
+    </pattern>`;
+                
+            default:
+                return '';
+        }
     }
     
     exportToDXF() {
@@ -641,6 +594,8 @@ export class ExportManager {
         
         // Export each element
         this.app.elements.forEach(el => {
+            const colorIndex = this.getAutocadColorIndex(el.color);
+            
             if (el.type === 'line' || el.type === 'arrow') {
                 const lineStyle = el.lineStyle || 'solid';
                 // Export line segments with flipped Y
@@ -651,7 +606,8 @@ export class ExportManager {
                         flipY(el.startY), 
                         el.bendX * scale, 
                         flipY(el.bendY),
-                        lineStyle
+                        lineStyle,
+                        colorIndex
                     );
                     // Second segment
                     dxf += this.dxfLine(
@@ -659,7 +615,8 @@ export class ExportManager {
                         flipY(el.bendY), 
                         el.endX * scale, 
                         flipY(el.endY),
-                        lineStyle
+                        lineStyle,
+                        colorIndex
                     );
                 } else {
                     // Single line
@@ -668,7 +625,8 @@ export class ExportManager {
                         flipY(el.startY), 
                         el.endX * scale, 
                         flipY(el.endY),
-                        lineStyle
+                        lineStyle,
+                        colorIndex
                     );
                 }
                 
@@ -687,34 +645,29 @@ export class ExportManager {
                         flipY(el.endY),
                         (el.endX - 15 * Math.cos(angle - arrowAngle)) * scale,
                         flipY(el.endY - 15 * Math.sin(angle - arrowAngle)),
-                        'solid'
+                        'solid',
+                        colorIndex
                     );
                     dxf += this.dxfLine(
                         el.endX * scale,
                         flipY(el.endY),
                         (el.endX - 15 * Math.cos(angle + arrowAngle)) * scale,
                         flipY(el.endY - 15 * Math.sin(angle + arrowAngle)),
-                        'solid'
+                        'solid',
+                        colorIndex
                     );
                 }
             } else if (el.type === 'box') {
-                // Export box as four lines with flipped Y
-                const minX = Math.min(el.startX, el.endX) * scale;
-                const maxX = Math.max(el.startX, el.endX) * scale;
-                const minY = flipY(Math.max(el.startY, el.endY)); // Note: max becomes min after flip
-                const maxY = flipY(Math.min(el.startY, el.endY)); // Note: min becomes max after flip
-                
-                dxf += this.dxfLine(minX, minY, maxX, minY); // Bottom (was top)
-                dxf += this.dxfLine(maxX, minY, maxX, maxY); // Right
-                dxf += this.dxfLine(maxX, maxY, minX, maxY); // Top (was bottom)
-                dxf += this.dxfLine(minX, maxY, minX, minY); // Left
+                // Export box with color and fill
+                dxf += this.dxfBox(el, scale, flipY, colorIndex);
             } else if (el.type === 'text') {
                 // Export text with flipped Y
                 dxf += this.dxfText(
                     el.x * scale, 
                     flipY(el.y), 
                     el.text, 
-                    (el.fontSize || 16) * scale
+                    (el.fontSize || 16) * scale,
+                    colorIndex
                 );
             }
         });
@@ -728,9 +681,67 @@ export class ExportManager {
         return dxf;
     }
     
-    dxfLine(x1, y1, x2, y2, lineStyle = 'solid') {
+    getAutocadColorIndex(color) {
+        // Map hex colors to AutoCAD color indices
+        const colorMap = {
+            '#ffffff': 7,  // white
+            '#808080': 8,  // gray
+            '#ff0000': 1,  // red
+            '#0000ff': 5,  // blue
+            '#00ff00': 3,  // green
+            '#ffff00': 2,  // yellow
+            '#00ffff': 4,  // cyan
+            '#ff00ff': 6   // magenta
+        };
+        return colorMap[color] || 7; // default to white
+    }
+    
+    dxfBox(element, scale, flipY, colorIndex) {
+        const minX = Math.min(element.startX, element.endX) * scale;
+        const maxX = Math.max(element.startX, element.endX) * scale;
+        const minY = flipY(Math.max(element.startY, element.endY)); // Note: max becomes min after flip
+        const maxY = flipY(Math.min(element.startY, element.endY)); // Note: min becomes max after flip
+        
+        let dxf = '';
+        
+        // Draw box outline
+        dxf += this.dxfLine(minX, minY, maxX, minY, 'solid', colorIndex); // Bottom (was top)
+        dxf += this.dxfLine(maxX, minY, maxX, maxY, 'solid', colorIndex); // Right
+        dxf += this.dxfLine(maxX, maxY, minX, maxY, 'solid', colorIndex); // Top (was bottom)
+        dxf += this.dxfLine(minX, maxY, minX, minY, 'solid', colorIndex); // Left
+        
+        // Add hatch if filled
+        if (element.fill === 'solid' || (element.fill === 'pattern' && element.pattern !== 'none')) {
+            dxf += `0\nHATCH\n8\n0\n62\n${colorIndex}\n`;
+            dxf += `70\n0\n71\n0\n91\n1\n92\n1\n93\n4\n`;
+            dxf += `10\n${minX}\n20\n${minY}\n`;
+            dxf += `10\n${maxX}\n20\n${minY}\n`;
+            dxf += `10\n${maxX}\n20\n${maxY}\n`;
+            dxf += `10\n${minX}\n20\n${maxY}\n`;
+            
+            // Pattern name based on element pattern
+            const patternMap = {
+                'solid': 'SOLID',
+                'diagonal': 'ANSI31',
+                'crosshatch': 'ANSI37',
+                'horizontal': 'LINE',
+                'vertical': 'ANGLE',
+                'light': 'DOTS',
+                'medium': 'AR-SAND',
+                'dense': 'GRAVEL'
+            };
+            
+            const patternName = element.fill === 'solid' ? 'SOLID' : 
+                               (patternMap[element.pattern] || 'SOLID');
+            dxf += `2\n${patternName}\n`;
+        }
+        
+        return dxf;
+    }
+    
+    dxfLine(x1, y1, x2, y2, lineStyle = 'solid', colorIndex = 7) {
         const lineType = this.getLineTypeName(lineStyle);
-        return `0\nLINE\n8\n0\n6\n${lineType}\n10\n${x1}\n20\n${y1}\n11\n${x2}\n21\n${y2}\n`;
+        return `0\nLINE\n8\n0\n6\n${lineType}\n62\n${colorIndex}\n10\n${x1}\n20\n${y1}\n11\n${x2}\n21\n${y2}\n`;
     }
     
     getLineTypeName(style) {
@@ -745,8 +756,8 @@ export class ExportManager {
         }
     }
     
-    dxfText(x, y, text, fontSize) {
+    dxfText(x, y, text, fontSize, colorIndex = 7) {
         const height = fontSize * 0.8; // Approximate conversion
-        return `0\nTEXT\n8\n0\n10\n${x}\n20\n${y}\n40\n${height}\n1\n${text}\n`;
+        return `0\nTEXT\n8\n0\n62\n${colorIndex}\n10\n${x}\n20\n${y}\n40\n${height}\n1\n${text}\n`;
     }
 }

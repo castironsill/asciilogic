@@ -199,4 +199,77 @@ export class Renderer {
         ctx.textBaseline = 'middle';
         ctx.fillText(element.text, element.x, element.y);
     }
+    
+    getContentBounds() {
+        if (this.app.elements.length === 0) {
+            // Return default bounds if no elements
+            return {
+                minX: 0,
+                minY: 0,
+                maxX: 200,
+                maxY: 200,
+                width: 200,
+                height: 200
+            };
+        }
+        
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        
+        this.app.elements.forEach(element => {
+            if (element.type === 'box') {
+                minX = Math.min(minX, element.startX, element.endX);
+                minY = Math.min(minY, element.startY, element.endY);
+                maxX = Math.max(maxX, element.startX, element.endX);
+                maxY = Math.max(maxY, element.startY, element.endY);
+            } else if (element.type === 'line' || element.type === 'arrow') {
+                minX = Math.min(minX, element.startX, element.endX);
+                minY = Math.min(minY, element.startY, element.endY);
+                maxX = Math.max(maxX, element.startX, element.endX);
+                maxY = Math.max(maxY, element.startY, element.endY);
+                
+                if (element.bendX !== undefined && element.bendY !== undefined) {
+                    minX = Math.min(minX, element.bendX);
+                    minY = Math.min(minY, element.bendY);
+                    maxX = Math.max(maxX, element.bendX);
+                    maxY = Math.max(maxY, element.bendY);
+                }
+            } else if (element.type === 'text') {
+                // Estimate text bounds
+                const ctx = this.app.ctx;
+                ctx.save();
+                const fontSize = element.fontSize || 16;
+                ctx.font = `${fontSize}px monospace`;
+                const lines = element.text.split('\n');
+                let maxWidth = 0;
+                lines.forEach(line => {
+                    maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
+                });
+                ctx.restore();
+                
+                minX = Math.min(minX, element.x);
+                minY = Math.min(minY, element.y - fontSize);
+                maxX = Math.max(maxX, element.x + maxWidth);
+                maxY = Math.max(maxY, element.y + (lines.length * fontSize * 1.2));
+            }
+        });
+        
+        // Add some padding to prevent clipping
+        const padding = 10;
+        minX -= padding;
+        minY -= padding;
+        maxX += padding;
+        maxY += padding;
+        
+        return {
+            minX: minX,
+            minY: minY,
+            maxX: maxX,
+            maxY: maxY,
+            width: maxX - minX,
+            height: maxY - minY
+        };
+    }
 }

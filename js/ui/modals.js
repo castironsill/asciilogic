@@ -169,6 +169,9 @@ export class ModalManager {
                     if (downloadImageBtn) downloadImageBtn.style.display = 'none';
                     if (asciiOptions) asciiOptions.style.display = 'block';
                 }
+                
+                // Update preview canvas if needed
+                this.updatePreview(format);
             });
         });
         
@@ -211,6 +214,53 @@ export class ModalManager {
                 this.hideHelpModal();
             }
         });
+    }
+    
+    updatePreview(type) {
+        const canvas = document.getElementById(`${type}-preview`);
+        if (!canvas || !canvas.getContext) return;
+        
+        const ctx = canvas.getContext('2d');
+        const bounds = this.app.renderer.getContentBounds();
+        
+        // Ensure minimum canvas size
+        const minSize = 200;
+        const scale = Math.min(
+            canvas.width / Math.max(bounds.width, minSize),
+            canvas.height / Math.max(bounds.height, minSize)
+        ) * 0.8;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Background
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg');
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // If no elements, show a message
+        if (this.app.elements.length === 0) {
+            ctx.fillStyle = '#666';
+            ctx.font = '14px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('No content to preview', canvas.width / 2, canvas.height / 2);
+            return;
+        }
+        
+        ctx.save();
+        
+        // Center the content
+        const offsetX = (canvas.width - bounds.width * scale) / 2 - bounds.minX * scale;
+        const offsetY = (canvas.height - bounds.height * scale) / 2 - bounds.minY * scale;
+        
+        ctx.translate(offsetX, offsetY);
+        ctx.scale(scale, scale);
+        
+        // Draw elements with their styles
+        this.app.elements.forEach(element => {
+            // Draw the element using renderer
+            this.app.renderer.drawElement(ctx, element);
+        });
+        
+        ctx.restore();
     }
     
     showHelpModal() {
@@ -277,6 +327,9 @@ export class ModalManager {
                 const checkbox = document.getElementById(id);
                 if (checkbox) checkbox.checked = false;
             });
+            
+            // Update preview for ascii-basic
+            this.updatePreview('ascii-basic');
         }
     }
     
