@@ -575,22 +575,8 @@ export class ExportManager {
         // Helper function to flip Y coordinate
         const flipY = (y) => (maxY - y) * scale;
         
-        // DXF header with line type definitions
-        let dxf = '0\nSECTION\n2\nHEADER\n0\nENDSEC\n';
-        
-        // Add line type table
-        dxf += '0\nSECTION\n2\nTABLES\n';
-        dxf += '0\nTABLE\n2\nLTYPE\n';
-        
-        // Define line types
-        dxf += '0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0\n';
-        dxf += '0\nLTYPE\n2\nDASHED\n70\n0\n3\nDashed __ __ __ __ __\n72\n65\n73\n2\n40\n0.75\n49\n0.5\n49\n-0.25\n';
-        dxf += '0\nLTYPE\n2\nDOT\n70\n0\n3\nDotted . . . . . . .\n72\n65\n73\n2\n40\n0.25\n49\n0.0\n49\n-0.25\n';
-        
-        dxf += '0\nENDTAB\n0\nENDSEC\n';
-        
-        // Start entities section
-        dxf += '0\nSECTION\n2\nENTITIES\n';
+        // Minimal DXF header - R12 format (most compatible)
+        let dxf = '0\nSECTION\n2\nENTITIES\n';
         
         // Export each element
         this.app.elements.forEach(el => {
@@ -699,41 +685,164 @@ export class ExportManager {
     dxfBox(element, scale, flipY, colorIndex) {
         const minX = Math.min(element.startX, element.endX) * scale;
         const maxX = Math.max(element.startX, element.endX) * scale;
-        const minY = flipY(Math.max(element.startY, element.endY)); // Note: max becomes min after flip
-        const maxY = flipY(Math.min(element.startY, element.endY)); // Note: min becomes max after flip
+        const minY = flipY(Math.max(element.startY, element.endY));
+        const maxY = flipY(Math.min(element.startY, element.endY));
         
         let dxf = '';
         
-        // Draw box outline
-        dxf += this.dxfLine(minX, minY, maxX, minY, 'solid', colorIndex); // Bottom (was top)
-        dxf += this.dxfLine(maxX, minY, maxX, maxY, 'solid', colorIndex); // Right
-        dxf += this.dxfLine(maxX, maxY, minX, maxY, 'solid', colorIndex); // Top (was bottom)
-        dxf += this.dxfLine(minX, maxY, minX, minY, 'solid', colorIndex); // Left
+        // Method 1: Use LWPOLYLINE for the box (most compatible closed shape)
+        dxf += '0\nLWPOLYLINE\n';
+        dxf += `8\n0\n`; // Layer 0 (default)
+        dxf += `62\n${colorIndex}\n`; // Color
+        dxf += '90\n4\n'; // 4 vertices
+        dxf += '70\n1\n'; // 1 = closed
+        dxf += `10\n${minX}\n20\n${minY}\n`; // Bottom-left
+        dxf += `10\n${maxX}\n20\n${minY}\n`; // Bottom-right
+        dxf += `10\n${maxX}\n20\n${maxY}\n`; // Top-right
+        dxf += `10\n${minX}\n20\n${maxY}\n`; // Top-left
         
-        // Add hatch if filled
-        if (element.fill === 'solid' || (element.fill === 'pattern' && element.pattern !== 'none')) {
-            dxf += `0\nHATCH\n8\n0\n62\n${colorIndex}\n`;
-            dxf += `70\n0\n71\n0\n91\n1\n92\n1\n93\n4\n`;
-            dxf += `10\n${minX}\n20\n${minY}\n`;
-            dxf += `10\n${maxX}\n20\n${minY}\n`;
-            dxf += `10\n${maxX}\n20\n${maxY}\n`;
-            dxf += `10\n${minX}\n20\n${maxY}\n`;
+        // Method 2: For fills, add simple visual indicators using lines
+        // Adjust pattern sizing to be visible at 0.1 scale
+        if (element.fill === 'solid') {
+            // For solid fill, add X pattern
+            dxf += this.dxfLine(minX, minY, maxX, maxY, 'solid', colorIndex);
+            dxf += this.dxfLine(maxX, minY, minX, maxY, 'solid', colorIndex);
+        } else if (element.fill === 'pattern' && element.pattern !== 'none') {
+            const boxWidth = maxX - minX;
+            const boxHeight = maxY - minY;
             
-            // Pattern name based on element pattern
-            const patternMap = {
-                'solid': 'SOLID',
-                'diagonal': 'ANSI31',
-                'crosshatch': 'ANSI37',
-                'horizontal': 'LINE',
-                'vertical': 'ANGLE',
-                'light': 'DOTS',
-                'medium': 'AR-SAND',
-                'dense': 'GRAVEL'
-            };
-            
-            const patternName = element.fill === 'solid' ? 'SOLID' : 
-                               (patternMap[element.pattern] || 'SOLID');
-            dxf += `2\n${patternName}\n`;
+            switch (element.pattern) {
+                case 'diagonal':
+                    // Diagonal lines - use percentage of box size for spacing
+                    const diagSpacing = Math.min(boxWidth, boxHeight) * 0.2; // 20% of smallest dimension
+                    const numDiagLines = Math.floor(Math.max(boxWidth, boxHeight) / diagSpacing);
+                    
+                    for (let i = 1; i < numDiagLines; i++) {
+                        const offset = i * diagSpacing;
+                        // Start from bottom edge going up-right
+                        if (offset < boxWidth + boxHeight) {
+                            let x1 = minX + Math.min(offset, boxWidth);
+                            let y1 = minY + Math.max(0, offset - boxWidth);
+                            let x2 = minX + Math.max(0, offset - boxHeight);
+                            let y2 = minY + Math.min(offset, boxHeight);
+                            
+                            // Clip to box bounds
+                            if (x1 <= maxX && y2 <= maxY) {
+                                dxf += this.dxfLine(x1, y1, x2, y2, 'solid', colorIndex);
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'horizontal':
+                    // Horizontal lines - 4 lines evenly spaced
+                    const hLines = 4;
+                    const hSpacing = boxHeight / (hLines + 1);
+                    for (let i = 1; i <= hLines; i++) {
+                        const y = minY + (i * hSpacing);
+                        dxf += this.dxfLine(
+                            minX + boxWidth * 0.1,
+                            y,
+                            maxX - boxWidth * 0.1,
+                            y,
+                            'solid', colorIndex
+                        );
+                    }
+                    break;
+                    
+                case 'vertical':
+                    // Vertical lines - 4 lines evenly spaced
+                    const vLines = 4;
+                    const vSpacing = boxWidth / (vLines + 1);
+                    for (let i = 1; i <= vLines; i++) {
+                        const x = minX + (i * vSpacing);
+                        dxf += this.dxfLine(
+                            x,
+                            minY + boxHeight * 0.1,
+                            x,
+                            maxY - boxHeight * 0.1,
+                            'solid', colorIndex
+                        );
+                    }
+                    break;
+                    
+                case 'crosshatch':
+                    // Crosshatch - combination of diagonal lines both ways
+                    const crossSpacing = Math.min(boxWidth, boxHeight) * 0.25;
+                    
+                    // First direction (bottom-left to top-right)
+                    for (let i = 1; i < 4; i++) {
+                        const offset = i * crossSpacing;
+                        if (offset < boxWidth) {
+                            dxf += this.dxfLine(
+                                minX + offset, minY,
+                                Math.min(minX + offset + boxHeight, maxX), 
+                                Math.min(minY + boxHeight, maxY),
+                                'solid', colorIndex
+                            );
+                        }
+                        if (offset < boxHeight) {
+                            dxf += this.dxfLine(
+                                minX, minY + offset,
+                                Math.min(minX + boxWidth, maxX), 
+                                Math.min(minY + offset + boxWidth, maxY),
+                                'solid', colorIndex
+                            );
+                        }
+                    }
+                    
+                    // Second direction (bottom-right to top-left)
+                    for (let i = 1; i < 4; i++) {
+                        const offset = i * crossSpacing;
+                        if (offset < boxWidth) {
+                            dxf += this.dxfLine(
+                                maxX - offset, minY,
+                                Math.max(maxX - offset - boxHeight, minX),
+                                Math.min(minY + boxHeight, maxY),
+                                'solid', colorIndex
+                            );
+                        }
+                        if (offset < boxHeight) {
+                            dxf += this.dxfLine(
+                                maxX, minY + offset,
+                                Math.max(maxX - boxWidth, minX),
+                                Math.min(minY + offset + boxWidth, maxY),
+                                'solid', colorIndex
+                            );
+                        }
+                    }
+                    break;
+                    
+                case 'light':
+                case 'medium':
+                case 'dense':
+                    // Dot patterns as grid of small plus signs
+                    const density = element.pattern === 'light' ? 3 : 
+                                   element.pattern === 'medium' ? 4 : 5;
+                    const dotSpacingX = boxWidth / (density + 1);
+                    const dotSpacingY = boxHeight / (density + 1);
+                    // Make dots proportional to spacing
+                    const dotSize = Math.min(dotSpacingX, dotSpacingY) * 0.2;
+                    
+                    for (let i = 1; i <= density; i++) {
+                        for (let j = 1; j <= density; j++) {
+                            const dotX = minX + (i * dotSpacingX);
+                            const dotY = minY + (j * dotSpacingY);
+                            // Plus sign for each dot
+                            dxf += this.dxfLine(
+                                dotX - dotSize, dotY,
+                                dotX + dotSize, dotY,
+                                'solid', colorIndex
+                            );
+                            dxf += this.dxfLine(
+                                dotX, dotY - dotSize,
+                                dotX, dotY + dotSize,
+                                'solid', colorIndex
+                            );
+                        }
+                    }
+                    break;
+            }
         }
         
         return dxf;
