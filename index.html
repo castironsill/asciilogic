@@ -179,10 +179,19 @@
             <p>Create text with different font sizes using the Font Size control. Select existing text to change its size, or double-click to edit both content and size.</p>
 
             <h3>Import & Export</h3>
-            <p>Import existing ASCII diagrams from other tools or export your creations in ASCII Basic or Extended (Unicode) format. Perfect for embedding in source code, markdown documentation, or terminal applications.</p>
+            <p>Import existing ASCII diagrams from other tools or export your creations in multiple formats: ASCII Basic or Extended (Unicode), PNG images, SVG vector graphics, or DXF for CAD software. Perfect for embedding in source code, markdown documentation, presentations, or technical drawings.</p>
 
             <h3>Grid Snapping</h3>
             <p>All elements snap to a configurable grid, ensuring clean, aligned diagrams. Adjust grid size from 5 to 50 pixels.</p>
+
+            <h2>Export Formats</h2>
+            <ul>
+                <li><strong>ASCII Basic</strong> - Standard ASCII characters for maximum compatibility</li>
+                <li><strong>ASCII Extended</strong> - Unicode box-drawing characters for cleaner appearance</li>
+                <li><strong>PNG</strong> - High-quality raster images for presentations and documentation</li>
+                <li><strong>SVG</strong> - Scalable vector graphics perfect for web and print</li>
+                <li><strong>DXF</strong> - CAD format for importing into AutoCAD and similar software</li>
+            </ul>
 
             <h2>Common Use Cases</h2>
             <ul>
@@ -201,6 +210,7 @@
                 <li>Double-click text elements to edit their content</li>
                 <li>Select text and use the Font Size control to change its size</li>
                 <li>Export to ASCII Extended for cleaner box-drawing characters</li>
+                <li>Export to SVG for scalable graphics that look perfect at any size</li>
                 <li>The tool saves your work in browser memory - clear cache carefully!</li>
             </ul>
 
@@ -223,6 +233,7 @@
                 <button class="control-btn active" data-format="ascii-basic">ASCII Basic</button>
                 <button class="control-btn" data-format="ascii-extended">ASCII Extended</button>
                 <button class="control-btn" data-format="png">PNG Image</button>
+                <button class="control-btn" data-format="svg">SVG</button>
                 <button class="control-btn" data-format="dxf">DXF (CAD)</button>
             </div>
             
@@ -233,14 +244,26 @@
                 <input type="text" id="export-filename" placeholder="Leave empty for auto-generated name" style="width: 100%; background: var(--bg-tertiary); border: 1px solid var(--bg-tertiary); color: var(--text-primary); padding: 8px; border-radius: 4px;">
             </div>
             
+            <!-- SVG Options -->
+            <div id="svg-options" style="margin: 15px 0; display: none;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="svg-group-elements" checked style="cursor: pointer;">
+                    <span>Group elements (ungroup in editor to edit individually)</span>
+                </label>
+            </div>
+            
             <div style="margin-top: 20px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 4px; font-size: 13px;">
                 <div style="margin-bottom: 8px;">
                     <strong>💡 Tip:</strong> Extended ASCII works best in:
                     <span style="color: var(--text-secondary);">Code editors (VS Code, Notepad++), Terminals, Markdown files, GitHub READMEs</span>
                 </div>
-                <div>
+                <div style="margin-bottom: 8px;">
                     Use Basic ASCII for:
                     <span style="color: var(--text-secondary);">Emails, Old systems, Maximum compatibility</span>
+                </div>
+                <div>
+                    SVG format provides:
+                    <span style="color: var(--text-secondary);">Scalable graphics perfect for documentation, web embedding, and high-quality printing</span>
                 </div>
             </div>
             

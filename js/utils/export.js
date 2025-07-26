@@ -408,6 +408,137 @@ export class ExportManager {
         return canvas;
     }
     
+    exportToSVG(groupElements = true) {
+        if (this.app.elements.length === 0) {
+            // Return empty SVG with message
+            return `<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+                <rect width="400" height="300" fill="#1a1a1a"/>
+                <text x="200" y="150" font-family="monospace" font-size="16" fill="#666" text-anchor="middle">No drawing to export</text>
+            </svg>`;
+        }
+        
+        // Find bounds
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        // Temporary canvas context for text measurement
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        this.app.elements.forEach(el => {
+            if (el.type === 'text') {
+                const fontSize = el.fontSize || 16;
+                tempCtx.font = `${fontSize}px monospace`;
+                const textWidth = tempCtx.measureText(el.text).width;
+                minX = Math.min(minX, el.x);
+                minY = Math.min(minY, el.y - fontSize);
+                maxX = Math.max(maxX, el.x + textWidth);
+                maxY = Math.max(maxY, el.y + 10);
+            } else if (el.type === 'box') {
+                minX = Math.min(minX, el.startX, el.endX);
+                minY = Math.min(minY, el.startY, el.endY);
+                maxX = Math.max(maxX, el.startX, el.endX);
+                maxY = Math.max(maxY, el.startY, el.endY);
+            } else {
+                minX = Math.min(minX, el.startX, el.endX);
+                minY = Math.min(minY, el.startY, el.endY);
+                maxX = Math.max(maxX, el.startX, el.endX);
+                maxY = Math.max(maxY, el.startY, el.endY);
+                
+                if (el.bendX !== undefined) {
+                    minX = Math.min(minX, el.bendX);
+                    minY = Math.min(minY, el.bendY);
+                    maxX = Math.max(maxX, el.bendX);
+                    maxY = Math.max(maxY, el.bendY);
+                }
+            }
+        });
+        
+        // Add padding
+        const padding = 40;
+        minX -= padding;
+        minY -= padding;
+        maxX += padding;
+        maxY += padding;
+        
+        const width = maxX - minX;
+        const height = maxY - minY;
+        
+        // Start building SVG
+        let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+        
+        // Add background
+        svg += `\n  <rect width="${width}" height="${height}" fill="#1a1a1a"/>`;
+        
+        // Create a group with translation to handle bounds - or individual transforms
+        if (groupElements) {
+            svg += `\n  <g transform="translate(${-minX}, ${-minY})">`;
+        }
+        
+        // Draw all elements
+        this.app.elements.forEach(el => {
+            const transform = groupElements ? '' : ` transform="translate(${-minX}, ${-minY})"`;
+            
+            if (el.type === 'line' || el.type === 'arrow') {
+                // Draw line path
+                let path = `M ${el.startX} ${el.startY}`;
+                
+                if (el.bendX !== undefined && el.bendY !== undefined) {
+                    path += ` L ${el.bendX} ${el.bendY} L ${el.endX} ${el.endY}`;
+                } else {
+                    path += ` L ${el.endX} ${el.endY}`;
+                }
+                
+                svg += `\n    <path d="${path}" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"${transform}/>`;
+                
+                // Draw arrow head if needed
+                if (el.type === 'arrow') {
+                    const angle = Math.atan2(
+                        el.endY - (el.bendY !== undefined ? el.bendY : el.startY),
+                        el.endX - (el.bendX !== undefined ? el.bendX : el.startX)
+                    );
+                    const arrowLength = 15;
+                    const arrowAngle = Math.PI / 6;
+                    
+                    const x1 = el.endX - arrowLength * Math.cos(angle - arrowAngle);
+                    const y1 = el.endY - arrowLength * Math.sin(angle - arrowAngle);
+                    const x2 = el.endX - arrowLength * Math.cos(angle + arrowAngle);
+                    const y2 = el.endY - arrowLength * Math.sin(angle + arrowAngle);
+                    
+                    svg += `\n    <path d="M ${el.endX} ${el.endY} L ${x1} ${y1} M ${el.endX} ${el.endY} L ${x2} ${y2}" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"${transform}/>`;
+                }
+            } else if (el.type === 'box') {
+                const x = Math.min(el.startX, el.endX);
+                const y = Math.min(el.startY, el.endY);
+                const rectWidth = Math.abs(el.endX - el.startX);
+                const rectHeight = Math.abs(el.endY - el.startY);
+                svg += `\n    <rect x="${x}" y="${y}" width="${rectWidth}" height="${rectHeight}" stroke="white" stroke-width="2" fill="none" stroke-linejoin="round"${transform}/>`;
+            } else if (el.type === 'text') {
+                const fontSize = el.fontSize || 16;
+                // Escape special characters in text
+                const escapedText = el.text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+                svg += `\n    <text x="${el.x}" y="${el.y}" font-family="monospace" font-size="${fontSize}" fill="white"${transform}>${escapedText}</text>`;
+            }
+        });
+        
+        // Close the transform group if we're using it
+        if (groupElements) {
+            svg += '\n  </g>';
+        }
+        
+        // Add watermark
+        svg += `\n  <text x="${width - 90}" y="${height - 10}" font-family="monospace" font-size="12" fill="#666" opacity="0.3">asciilogic.com</text>`;
+        
+        // Close SVG
+        svg += '\n</svg>';
+        
+        return svg;
+    }
+    
     exportToDXF() {
         // Scale factor: 1 pixel = 0.1 units in CAD (so 100 pixels = 10 units)
         // This makes drawings more reasonable in size

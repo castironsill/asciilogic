@@ -90,9 +90,13 @@ export class ModalManager {
                 const copyBtn = document.getElementById('copy-to-clipboard');
                 const downloadBtn = document.getElementById('download-file');
                 const downloadImageBtn = document.getElementById('download-image');
+                const svgOptions = document.getElementById('svg-options');
                 
                 // Clear filename when switching formats (optional - remove if you want to keep it)
                 // document.getElementById('export-filename').value = '';
+                
+                // Hide SVG options by default
+                if (svgOptions) svgOptions.style.display = 'none';
                 
                 if (format === 'png') {
                     // Show image preview
@@ -107,6 +111,29 @@ export class ModalManager {
                     if (copyBtn) copyBtn.style.display = 'none';
                     if (downloadBtn) downloadBtn.style.display = 'none';
                     if (downloadImageBtn) downloadImageBtn.style.display = 'block';
+                } else if (format === 'svg') {
+                    // Show SVG preview
+                    if (this.app.exportManager) {
+                        // Check if group elements checkbox is checked
+                        const groupCheckbox = document.getElementById('svg-group-elements');
+                        const groupElements = groupCheckbox ? groupCheckbox.checked : true;
+                        
+                        const svgText = this.app.exportManager.exportToSVG(groupElements);
+                        if (exportPreview) {
+                            // Display SVG as both visual preview and text
+                            exportPreview.innerHTML = `
+                                <div style="border: 1px solid #333; margin-bottom: 10px; background: #1a1a1a;">
+                                    ${svgText}
+                                </div>
+                                <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 12px; color: #999; max-height: 200px; overflow: auto;">${svgText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                            `;
+                        }
+                    }
+                    // Show/hide appropriate buttons and options
+                    if (copyBtn) copyBtn.style.display = 'block';
+                    if (downloadBtn) downloadBtn.style.display = 'block';
+                    if (downloadImageBtn) downloadImageBtn.style.display = 'none';
+                    if (svgOptions) svgOptions.style.display = 'block';
                 } else if (format === 'dxf') {
                     // Show DXF preview
                     if (this.app.exportManager) {
@@ -134,6 +161,18 @@ export class ModalManager {
                 }
             });
         });
+        
+        // SVG group elements checkbox listener
+        const svgGroupCheckbox = document.getElementById('svg-group-elements');
+        if (svgGroupCheckbox) {
+            svgGroupCheckbox.addEventListener('change', () => {
+                // Update preview if SVG is currently selected
+                const activeFormat = document.querySelector('[data-format].active');
+                if (activeFormat && activeFormat.dataset.format === 'svg') {
+                    activeFormat.click(); // Re-trigger the format selection to update preview
+                }
+            });
+        }
         
         // Close modals when clicking outside
         window.addEventListener('click', (e) => {
@@ -212,11 +251,26 @@ export class ModalManager {
     copyExport() {
         const exportPreview = document.getElementById('export-preview'); // Changed from export-textarea
         if (exportPreview) {
-            const text = exportPreview.textContent;
+            // Check which format is active
+            const activeFormat = document.querySelector('[data-format].active');
+            const formatType = activeFormat ? activeFormat.dataset.format : 'ascii-basic';
+            
+            let textToCopy;
+            
+            if (formatType === 'svg') {
+                // For SVG, get the actual SVG code
+                // Check if group elements checkbox is checked
+                const groupCheckbox = document.getElementById('svg-group-elements');
+                const groupElements = groupCheckbox ? groupCheckbox.checked : true;
+                textToCopy = this.app.exportManager.exportToSVG(groupElements);
+            } else {
+                // For other formats, get the text content
+                textToCopy = exportPreview.textContent;
+            }
             
             // Create a temporary textarea to copy from
             const tempTextarea = document.createElement('textarea');
-            tempTextarea.value = text;
+            tempTextarea.value = textToCopy;
             tempTextarea.style.position = 'fixed';
             tempTextarea.style.opacity = '0';
             document.body.appendChild(tempTextarea);
@@ -239,7 +293,6 @@ export class ModalManager {
         const filenameInput = document.getElementById('export-filename');
         
         if (exportPreview) {
-            const text = exportPreview.textContent;
             // Check which format is active
             const activeFormat = document.querySelector('[data-format].active');
             const formatType = activeFormat ? activeFormat.dataset.format : 'ascii-basic';
@@ -250,10 +303,23 @@ export class ModalManager {
             
             let filename;
             let mimeType = 'text/plain;charset=utf-8';
-            let finalText = text;
+            let finalContent;
             
-            if (formatType === 'dxf') {
+            if (formatType === 'svg') {
+                // SVG export
+                // Check if group elements checkbox is checked
+                const groupCheckbox = document.getElementById('svg-group-elements');
+                const groupElements = groupCheckbox ? groupCheckbox.checked : true;
+                finalContent = this.app.exportManager.exportToSVG(groupElements);
+                if (customFilename) {
+                    filename = customFilename.endsWith('.svg') ? customFilename : customFilename + '.svg';
+                } else {
+                    filename = `ascii-drawing_${date}.svg`;
+                }
+                mimeType = 'image/svg+xml;charset=utf-8';
+            } else if (formatType === 'dxf') {
                 // DXF export
+                finalContent = exportPreview.textContent;
                 if (customFilename) {
                     filename = customFilename.endsWith('.dxf') ? customFilename : customFilename + '.dxf';
                 } else {
@@ -262,6 +328,7 @@ export class ModalManager {
                 mimeType = 'application/dxf';
             } else {
                 // ASCII export
+                finalContent = exportPreview.textContent;
                 const isExtended = formatType === 'ascii-extended';
                 if (customFilename) {
                     filename = customFilename.endsWith('.txt') ? customFilename : customFilename + '.txt';
@@ -269,12 +336,12 @@ export class ModalManager {
                     filename = isExtended ? `ascii-drawing-unicode_${date}.txt` : `ascii-drawing_${date}.txt`;
                 }
                 // Add UTF-8 BOM for extended ASCII
-                finalText = isExtended ? '\uFEFF' + text : text;
+                finalContent = isExtended ? '\uFEFF' + finalContent : finalContent;
             }
             
             console.log('Downloading with filename:', filename); // Debug log
             
-            const blob = new Blob([finalText], { type: mimeType });
+            const blob = new Blob([finalContent], { type: mimeType });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
