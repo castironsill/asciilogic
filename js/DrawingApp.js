@@ -30,6 +30,9 @@ export class DrawingApp {
         this.selectedElements = [];
         this.tempElement = null;
         
+        // Clipboard for copy/paste
+        this.clipboard = [];
+        
         // Mouse tracking
         this.lastMousePos = { x: 0, y: 0 };
         this.panStart = { x: 0, y: 0 };
@@ -323,9 +326,28 @@ export class DrawingApp {
             return;
         }
         
+        // Copy/Paste handling
+        if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+            e.preventDefault();
+            this.copySelected();
+            return;
+        }
+        
         if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
             e.preventDefault();
-            this.modalManager.showImportModal();
+            if (this.clipboard.length > 0) {
+                // Paste from internal clipboard at mouse position
+                this.pasteElements();
+            } else {
+                // No internal clipboard, show message
+                notifications.show('Nothing to paste. Use Import ASCII for external content.');
+            }
+            return;
+        }
+        
+        if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+            e.preventDefault();
+            this.duplicateSelected();
             return;
         }
         
@@ -1123,6 +1145,155 @@ export class DrawingApp {
             if (grid[y][vx] && '-─═'.includes(grid[y][vx])) {
                 visited[y][vx] = true;
             }
+        }
+    }
+    
+    copySelected() {
+        this.clipboard = [];
+        
+        // Determine what to copy
+        const elementsToCopy = this.selectedElements.length > 0 
+            ? this.selectedElements 
+            : (this.selectedElement ? [this.selectedElement] : []);
+        
+        if (elementsToCopy.length === 0) {
+            notifications.show('Nothing selected to copy');
+            return;
+        }
+        
+        // Find the bounds of selected elements to calculate center point
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        elementsToCopy.forEach(el => {
+            if (el.type === 'text') {
+                minX = Math.min(minX, el.x);
+                minY = Math.min(minY, el.y);
+                maxX = Math.max(maxX, el.x);
+                maxY = Math.max(maxY, el.y);
+            } else if (el.type === 'box') {
+                minX = Math.min(minX, el.startX, el.endX);
+                minY = Math.min(minY, el.startY, el.endY);
+                maxX = Math.max(maxX, el.startX, el.endX);
+                maxY = Math.max(maxY, el.startY, el.endY);
+            } else {
+                minX = Math.min(minX, el.startX, el.endX);
+                minY = Math.min(minY, el.startY, el.endY);
+                maxX = Math.max(maxX, el.startX, el.endX);
+                maxY = Math.max(maxY, el.startY, el.endY);
+                if (el.bendX !== undefined) {
+                    minX = Math.min(minX, el.bendX);
+                    minY = Math.min(minY, el.bendY);
+                    maxX = Math.max(maxX, el.bendX);
+                    maxY = Math.max(maxY, el.bendY);
+                }
+            }
+        });
+        
+        // Calculate center point of selection
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        
+        // Deep copy elements with relative positions to center
+        elementsToCopy.forEach(el => {
+            const copiedEl = JSON.parse(JSON.stringify(el));
+            
+            // Store relative position to center
+            if (copiedEl.type === 'text') {
+                copiedEl._offsetX = copiedEl.x - centerX;
+                copiedEl._offsetY = copiedEl.y - centerY;
+            } else if (copiedEl.type === 'box') {
+                copiedEl._startOffsetX = copiedEl.startX - centerX;
+                copiedEl._startOffsetY = copiedEl.startY - centerY;
+                copiedEl._endOffsetX = copiedEl.endX - centerX;
+                copiedEl._endOffsetY = copiedEl.endY - centerY;
+            } else {
+                copiedEl._startOffsetX = copiedEl.startX - centerX;
+                copiedEl._startOffsetY = copiedEl.startY - centerY;
+                copiedEl._endOffsetX = copiedEl.endX - centerX;
+                copiedEl._endOffsetY = copiedEl.endY - centerY;
+                if (copiedEl.bendX !== undefined) {
+                    copiedEl._bendOffsetX = copiedEl.bendX - centerX;
+                    copiedEl._bendOffsetY = copiedEl.bendY - centerY;
+                }
+            }
+            
+            this.clipboard.push(copiedEl);
+        });
+        
+        notifications.show(`Copied ${this.clipboard.length} element${this.clipboard.length > 1 ? 's' : ''}`);
+    }
+    
+    pasteElements() {
+        if (this.clipboard.length === 0) {
+            return;
+        }
+        
+        // Clear current selection
+        this.selectedElement = null;
+        this.selectedElements = [];
+        
+        // Get current mouse position (use last known position)
+        const pasteX = this.lastMousePos.x;
+        const pasteY = this.lastMousePos.y;
+        
+        // Snap to grid
+        const snappedX = this.grid.snapToGrid(pasteX);
+        const snappedY = this.grid.snapToGrid(pasteY);
+        
+        // Paste each element
+        this.clipboard.forEach(el => {
+            const newElement = JSON.parse(JSON.stringify(el));
+            
+            // Position relative to cursor
+            if (newElement.type === 'text') {
+                newElement.x = snappedX + (newElement._offsetX || 0);
+                newElement.y = snappedY + (newElement._offsetY || 0);
+                delete newElement._offsetX;
+                delete newElement._offsetY;
+            } else if (newElement.type === 'box') {
+                newElement.startX = snappedX + (newElement._startOffsetX || 0);
+                newElement.startY = snappedY + (newElement._startOffsetY || 0);
+                newElement.endX = snappedX + (newElement._endOffsetX || 0);
+                newElement.endY = snappedY + (newElement._endOffsetY || 0);
+                delete newElement._startOffsetX;
+                delete newElement._startOffsetY;
+                delete newElement._endOffsetX;
+                delete newElement._endOffsetY;
+            } else {
+                newElement.startX = snappedX + (newElement._startOffsetX || 0);
+                newElement.startY = snappedY + (newElement._startOffsetY || 0);
+                newElement.endX = snappedX + (newElement._endOffsetX || 0);
+                newElement.endY = snappedY + (newElement._endOffsetY || 0);
+                if (newElement.bendX !== undefined) {
+                    newElement.bendX = snappedX + (newElement._bendOffsetX || 0);
+                    newElement.bendY = snappedY + (newElement._bendOffsetY || 0);
+                    delete newElement._bendOffsetX;
+                    delete newElement._bendOffsetY;
+                }
+                delete newElement._startOffsetX;
+                delete newElement._startOffsetY;
+                delete newElement._endOffsetX;
+                delete newElement._endOffsetY;
+            }
+            
+            // Add to elements and selection
+            this.elements.push(newElement);
+            this.selectedElements.push(newElement);
+        });
+        
+        // Save state and render
+        this.history.saveState();
+        this.render();
+        notifications.show(`Pasted ${this.clipboard.length} element${this.clipboard.length > 1 ? 's' : ''}`);
+    }
+    
+    duplicateSelected() {
+        // First copy
+        this.copySelected();
+        
+        // Then paste immediately
+        if (this.clipboard.length > 0) {
+            this.pasteElements();
         }
     }
 }
