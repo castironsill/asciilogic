@@ -91,12 +91,14 @@ export class ModalManager {
                 const downloadBtn = document.getElementById('download-file');
                 const downloadImageBtn = document.getElementById('download-image');
                 const svgOptions = document.getElementById('svg-options');
+                const asciiOptions = document.getElementById('ascii-options');
                 
                 // Clear filename when switching formats (optional - remove if you want to keep it)
                 // document.getElementById('export-filename').value = '';
                 
-                // Hide SVG options by default
+                // Hide all options by default
                 if (svgOptions) svgOptions.style.display = 'none';
+                if (asciiOptions) asciiOptions.style.display = 'none';
                 
                 if (format === 'png') {
                     // Show image preview
@@ -149,15 +151,23 @@ export class ModalManager {
                 } else {
                     // Show ASCII preview
                     if (this.app.exportManager) {
-                        const asciiText = this.app.exportManager.exportToASCII(format === 'ascii-extended');
+                        // Get wrapper options
+                        const wrapperOptions = {
+                            markdownFence: document.getElementById('ascii-markdown-fence')?.checked || false,
+                            commentStyle: document.getElementById('ascii-comment-style')?.checked || false,
+                            boxFrame: document.getElementById('ascii-box-frame')?.checked || false
+                        };
+                        
+                        const asciiText = this.app.exportManager.exportToASCII(format === 'ascii-extended', wrapperOptions);
                         if (exportPreview) {
                             exportPreview.textContent = asciiText;
                         }
                     }
-                    // Show/hide appropriate buttons
+                    // Show/hide appropriate buttons and options
                     if (copyBtn) copyBtn.style.display = 'block';
                     if (downloadBtn) downloadBtn.style.display = 'block';
                     if (downloadImageBtn) downloadImageBtn.style.display = 'none';
+                    if (asciiOptions) asciiOptions.style.display = 'block';
                 }
             });
         });
@@ -173,6 +183,21 @@ export class ModalManager {
                 }
             });
         }
+        
+        // ASCII wrapper option listeners
+        const asciiOptions = ['ascii-markdown-fence', 'ascii-comment-style', 'ascii-box-frame'];
+        asciiOptions.forEach(optionId => {
+            const checkbox = document.getElementById(optionId);
+            if (checkbox) {
+                checkbox.addEventListener('change', () => {
+                    // Update preview if ASCII is currently selected
+                    const activeFormat = document.querySelector('[data-format].active');
+                    if (activeFormat && (activeFormat.dataset.format === 'ascii-basic' || activeFormat.dataset.format === 'ascii-extended')) {
+                        activeFormat.click(); // Re-trigger to update preview
+                    }
+                });
+            }
+        });
         
         // Close modals when clicking outside
         window.addEventListener('click', (e) => {
@@ -222,11 +247,13 @@ export class ModalManager {
     showExportModal(asciiText) {
         const modal = document.getElementById('export-modal');
         const exportPreview = document.getElementById('export-preview');
+        const asciiOptions = document.getElementById('ascii-options');
+        
         if (modal && exportPreview) {
             modal.style.display = 'flex';
-            // Auto-load ASCII Basic preview
+            // Auto-load ASCII Basic preview with no wrappers
             if (this.app.exportManager) {
-                const basicAscii = this.app.exportManager.exportToASCII(false); // false = basic ASCII
+                const basicAscii = this.app.exportManager.exportToASCII(false, {}); // false = basic ASCII, {} = no wrappers
                 exportPreview.textContent = basicAscii;
             }
             // Reset button states
@@ -237,6 +264,18 @@ export class ModalManager {
                 } else {
                     btn.classList.remove('active');
                 }
+            });
+            
+            // Show ASCII options since ASCII Basic is selected by default
+            if (asciiOptions) {
+                asciiOptions.style.display = 'block';
+            }
+            
+            // Reset checkboxes
+            const checkboxes = ['ascii-markdown-fence', 'ascii-comment-style', 'ascii-box-frame'];
+            checkboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) checkbox.checked = false;
             });
         }
     }
@@ -265,7 +304,17 @@ export class ModalManager {
                 textToCopy = this.app.exportManager.exportToSVG(groupElements);
             } else {
                 // For other formats, get the text content
-                textToCopy = exportPreview.textContent;
+                // For ASCII formats, regenerate with current options
+                if (formatType === 'ascii-basic' || formatType === 'ascii-extended') {
+                    const wrapperOptions = {
+                        markdownFence: document.getElementById('ascii-markdown-fence')?.checked || false,
+                        commentStyle: document.getElementById('ascii-comment-style')?.checked || false,
+                        boxFrame: document.getElementById('ascii-box-frame')?.checked || false
+                    };
+                    textToCopy = this.app.exportManager.exportToASCII(formatType === 'ascii-extended', wrapperOptions);
+                } else {
+                    textToCopy = exportPreview.textContent;
+                }
             }
             
             // Create a temporary textarea to copy from
@@ -328,8 +377,14 @@ export class ModalManager {
                 mimeType = 'application/dxf';
             } else {
                 // ASCII export
-                finalContent = exportPreview.textContent;
                 const isExtended = formatType === 'ascii-extended';
+                const wrapperOptions = {
+                    markdownFence: document.getElementById('ascii-markdown-fence')?.checked || false,
+                    commentStyle: document.getElementById('ascii-comment-style')?.checked || false,
+                    boxFrame: document.getElementById('ascii-box-frame')?.checked || false
+                };
+                finalContent = this.app.exportManager.exportToASCII(isExtended, wrapperOptions);
+                
                 if (customFilename) {
                     filename = customFilename.endsWith('.txt') ? customFilename : customFilename + '.txt';
                 } else {

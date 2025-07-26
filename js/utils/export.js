@@ -10,16 +10,68 @@ export class ExportManager {
         const exportBtn = document.getElementById('export-btn');
         if (exportBtn) {
             exportBtn.addEventListener('click', () => {
-                const asciiText = this.exportToASCII(false); // Start with basic
+                const asciiText = this.exportToASCII(false, {}); // Start with basic
                 this.app.modalManager.showExportModal(asciiText);
             });
         }
     }
     
-    exportToASCII(useExtended = false) {
+    exportToASCII(useExtended = false, wrapperOptions = {}) {
         if (this.app.elements.length === 0) {
             return 'No drawing to export';
         }
+        
+        // Get the base ASCII diagram
+        const asciiDiagram = this.generateASCIIDiagram(useExtended);
+        
+        // Apply wrappers based on options
+        let wrappedDiagram = asciiDiagram;
+        
+        // Apply markdown fence
+        if (wrapperOptions.markdownFence) {
+            wrappedDiagram = '```\n' + wrappedDiagram + '\n```';
+        }
+        
+        // Apply comment style (C-style comments)
+        if (wrapperOptions.commentStyle) {
+            const lines = wrappedDiagram.split('\n');
+            const commentedLines = [
+                '/*',
+                ...lines.map(line => ' * ' + line),
+                ' */'
+            ];
+            wrappedDiagram = commentedLines.join('\n');
+        }
+        
+        // Apply decorative box frame
+        if (wrapperOptions.boxFrame) {
+            const lines = wrappedDiagram.split('\n');
+            const maxLength = Math.max(...lines.map(line => line.length));
+            const topBorder = '╔' + '═'.repeat(maxLength + 2) + '╗';
+            const bottomBorder = '╚' + '═'.repeat(maxLength + 2) + '╝';
+            
+            const framedLines = [
+                topBorder,
+                ...lines.map(line => '║ ' + line.padEnd(maxLength) + ' ║'),
+                bottomBorder
+            ];
+            
+            // Add header
+            const header = [
+                '',
+                '    ASCII Diagram',
+                '    Created with asciilogic.com',
+                '    ' + new Date().toLocaleDateString(),
+                ''
+            ];
+            
+            wrappedDiagram = [...header, ...framedLines].join('\n');
+        }
+        
+        return wrappedDiagram;
+    }
+    
+    generateASCIIDiagram(useExtended) {
         
         // Find bounds
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
