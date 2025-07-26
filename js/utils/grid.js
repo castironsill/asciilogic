@@ -7,6 +7,11 @@ export class Grid {
         const ctx = this.app.gridCtx;
         ctx.clearRect(0, 0, this.app.gridCanvas.width, this.app.gridCanvas.height);
         
+        // Don't draw grid if size is 0
+        if (this.app.gridSize === 0) {
+            return;
+        }
+        
         const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-color');
         ctx.strokeStyle = gridColor;
         ctx.lineWidth = 1;
@@ -28,6 +33,10 @@ export class Grid {
     }
     
     snapToGrid(value) {
+        // If grid size is 0, don't snap (return exact value)
+        if (this.app.gridSize === 0) {
+            return value;
+        }
         return Math.round(value / this.app.gridSize) * this.app.gridSize;
     }
 }

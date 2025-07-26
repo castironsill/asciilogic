@@ -9,6 +9,7 @@ import { Renderer } from './core/render.js';
 import { ModalManager } from './ui/modals.js';
 import { ControlsManager } from './ui/controls.js';
 import { LineStyleManager } from './utils/lineStyles.js';
+import { BoxStyleManager } from './utils/boxStyles.js';
 import { notifications } from './ui/notifications.js';
 import { isPointNearElement, isElementInBox, getNormalizedBox, distanceToLineSegment } from './utils/geometry.js';
 
@@ -115,6 +116,7 @@ export class DrawingApp {
         this.modalManager = new ModalManager(this);
         this.controlsManager = new ControlsManager(this);
         this.lineStyleManager = new LineStyleManager(this);
+        this.boxStyleManager = new BoxStyleManager(this);
     }
     
     setupTools() {
@@ -142,9 +144,28 @@ export class DrawingApp {
                 delete this.tempElement.bendX;
                 delete this.tempElement.bendY;
                 
+                // Apply box style to temp element
+                const boxStyle = this.app.boxStyleManager.getBoxStyle();
+                this.tempElement.fill = boxStyle.fill;
+                this.tempElement.pattern = boxStyle.pattern;
+                this.tempElement.color = boxStyle.color;
+                
                 this.app.tempElement = this.tempElement;
                 this.app.render();
             }
+        };
+        
+        // Override box tool's mouse up to ensure styles are saved
+        const originalBoxMouseUp = boxTool.handleMouseUp.bind(boxTool);
+        boxTool.handleMouseUp = function(x, y, e) {
+            // Apply box style before finalizing
+            if (this.tempElement && this.tempElement.type === 'box') {
+                const boxStyle = this.app.boxStyleManager.getBoxStyle();
+                this.tempElement.fill = boxStyle.fill;
+                this.tempElement.pattern = boxStyle.pattern;
+                this.tempElement.color = boxStyle.color;
+            }
+            originalBoxMouseUp(x, y, e);
         };
         
         // Modify arrow creation
@@ -224,6 +245,32 @@ export class DrawingApp {
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        
+        // Grid toggle button
+        const toggleGridBtn = document.getElementById('toggle-grid');
+        if (toggleGridBtn) {
+            let previousGridSize = this.gridSize || 10;
+            
+            toggleGridBtn.addEventListener('click', () => {
+                const gridSizeInput = document.getElementById('grid-size');
+                
+                if (this.gridSize === 0) {
+                    // Turn grid back on
+                    this.gridSize = previousGridSize;
+                    gridSizeInput.value = previousGridSize;
+                    toggleGridBtn.style.opacity = '1';
+                } else {
+                    // Turn grid off
+                    previousGridSize = this.gridSize;
+                    this.gridSize = 0;
+                    gridSizeInput.value = 0;
+                    toggleGridBtn.style.opacity = '0.5';
+                }
+                
+                this.grid.draw();
+                this.render();
+            });
+        }
         
         // Auto-save
         setInterval(() => {

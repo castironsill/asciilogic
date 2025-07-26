@@ -43,7 +43,7 @@
     
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .line-style-controls {
+        .line-style-controls, .box-style-controls {
             display: flex;
             align-items: center;
             padding: 0 10px;
@@ -72,6 +72,26 @@
         .style-btn.active {
             background: var(--primary, #0084ff);
             color: white;
+            border-color: var(--primary, #0084ff);
+        }
+        
+        .style-select {
+            background: var(--bg-secondary, #2a2a2a);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: var(--text-primary, #fff);
+            font-size: 12px;
+            cursor: pointer;
+            height: 28px;
+        }
+        
+        .style-select:hover {
+            background: var(--bg-tertiary, #333);
+        }
+        
+        .style-select:focus {
+            outline: none;
             border-color: var(--primary, #0084ff);
         }
         
@@ -138,7 +158,12 @@
                 <h1 style="font-size: 20px; font-weight: 500; margin: 0;">asciilogic</h1>
                 <div class="settings-row">
                     <label for="grid-size">Grid Size:</label>
-                    <input type="number" id="grid-size" value="10" min="5" max="50" step="5">
+                    <input type="number" id="grid-size" value="10" min="0" max="50" step="5">
+                    <button id="toggle-grid" class="control-btn" style="padding: 4px 8px; margin-left: 5px; font-size: 12px;" title="Toggle grid visibility">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path d="M3 3h6v6H3zm0 8h6v6H3zm8-8h6v6h-6zm0 8h6v6h-6zM3 21h6v-6H3zm8 0h6v-6h-6zm8-18h-6v6h6zm0 8h-6v6h6zm0 8h-6v-6h6z"/>
+                        </svg>
+                    </button>
                 </div>
                 <!-- FIXED: Added for attribute to label -->
                 <div class="settings-row">
@@ -172,6 +197,38 @@
                             <circle cx="20" cy="12" r="1" fill="currentColor"/>
                         </svg>
                     </button>
+                </div>
+                <!-- Box Style Controls -->
+                <div class="box-style-controls" id="box-style-controls" style="display: none; gap: 8px; margin-left: 20px;">
+                    <label for="box-fill-select" style="font-size: 12px; color: var(--text-secondary);">Fill:</label>
+                    <select id="box-fill-select" class="style-select">
+                        <option value="none">None</option>
+                        <option value="solid">Solid</option>
+                        <option value="pattern">Pattern</option>
+                    </select>
+                    
+                    <label for="box-pattern-select" style="font-size: 12px; color: var(--text-secondary); display: none;">Pattern:</label>
+                    <select id="box-pattern-select" class="style-select" style="display: none;">
+                        <option value="diagonal">Diagonal</option>
+                        <option value="crosshatch">Cross</option>
+                        <option value="horizontal">Horizontal</option>
+                        <option value="vertical">Vertical</option>
+                        <option value="light">Light Dots</option>
+                        <option value="medium">Medium Dots</option>
+                        <option value="dense">Dense Dots</option>
+                    </select>
+                    
+                    <label for="box-color-select" style="font-size: 12px; color: var(--text-secondary);">Color:</label>
+                    <select id="box-color-select" class="style-select">
+                        <option value="white">White</option>
+                        <option value="gray">Gray</option>
+                        <option value="red">Red</option>
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="cyan">Cyan</option>
+                        <option value="magenta">Magenta</option>
+                    </select>
                 </div>
                 <button class="control-btn" id="help-btn">Help</button>
                 <button class="control-btn" id="import-btn">Import ASCII</button>
@@ -279,6 +336,7 @@
                 <li>Select text and use the Font Size control to change its size</li>
                 <li>Export to ASCII Extended for cleaner box-drawing characters</li>
                 <li>Export to SVG for scalable graphics that look perfect at any size</li>
+                <li>Set <strong>Grid Size to 0</strong> to hide the grid (better for viewing filled boxes)</li>
                 <li>The tool saves your work in browser memory - clear cache carefully!</li>
             </ul>
 
