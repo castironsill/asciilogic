@@ -177,6 +177,19 @@
                     <input type="number" id="font-size" value="16" min="10" max="48" step="2">
                     <span style="font-size: 12px; color: var(--text-secondary);">px</span>
                 </div>
+                <div class="settings-row">
+                    <label for="color-select">Color:</label>
+                    <select id="color-select" class="style-select">
+                        <option value="white">White</option>
+                        <option value="gray">Gray</option>
+                        <option value="red">Red</option>
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="cyan">Cyan</option>
+                        <option value="magenta">Magenta</option>
+                    </select>
+                </div>
                 <!-- END OF FIX -->
                 <!-- Line Style Controls -->
                 <div class="line-style-controls" id="line-style-controls" style="display: none; gap: 8px; margin-left: 20px;">
@@ -224,17 +237,6 @@
                         <option value="dense">Dense Dots</option>
                     </select>
                     
-                    <label for="box-color-select" style="font-size: 12px; color: var(--text-secondary);">Color:</label>
-                    <select id="box-color-select" class="style-select">
-                        <option value="white">White</option>
-                        <option value="gray">Gray</option>
-                        <option value="red">Red</option>
-                        <option value="blue">Blue</option>
-                        <option value="green">Green</option>
-                        <option value="yellow">Yellow</option>
-                        <option value="cyan">Cyan</option>
-                        <option value="magenta">Magenta</option>
-                    </select>
                 </div>
                 <button class="control-btn" id="help-btn">Help</button>
                 <button class="control-btn" id="import-btn">Import ASCII</button>
@@ -342,7 +344,8 @@
                 <li>Hold middle mouse button to pan, or use Shift+drag</li>
                 <li>Double-click text elements to edit their content</li>
                 <li>Select text and use the Font Size control to change its size</li>
-                <li>Select a box or circle to change its fill, pattern, and color; select a line or arrow to change its line style. Drag a selection box over several shapes to restyle them all at once.</li>
+                <li>The <strong>Color</strong> control in the top bar applies to every element type — boxes, circles, lines, arrows, and text. Pick a color before drawing, or select existing elements to recolor them.</li>
+                <li>Select a box or circle to change its fill and pattern; select a line or arrow to change its line style. Drag a selection box (or Shift+click) over several elements to restyle them all at once.</li>
                 <li>Export to ASCII Extended for cleaner box-drawing characters</li>
                 <li>Export to SVG for scalable graphics that look perfect at any size</li>
                 <li>Set <strong>Grid Size to 0</strong> to hide the grid (better for viewing filled boxes)</li>

@@ -13,6 +13,7 @@ import { ModalManager } from './ui/modals.js';
 import { ControlsManager } from './ui/controls.js';
 import { LineStyleManager } from './utils/lineStyles.js';
 import { BoxStyleManager } from './utils/boxStyles.js';
+import { ColorManager } from './utils/colorManager.js';
 import { notifications } from './ui/notifications.js';
 import { getElementsBounds, getTextDimensions } from './utils/geometry.js';
 
@@ -120,6 +121,7 @@ export class DrawingApp {
         this.controlsManager = new ControlsManager(this);
         this.lineStyleManager = new LineStyleManager(this);
         this.boxStyleManager = new BoxStyleManager(this);
+        this.colorManager = new ColorManager(this);
     }
     
     setupTools() {
@@ -588,7 +590,8 @@ export class DrawingApp {
                 x: this.textPosition.x,
                 y: this.textPosition.y,
                 text: text,
-                fontSize: this.fontSize
+                fontSize: this.fontSize,
+                color: this.colorManager.getColor()
             });
         }
         this.cancelTextInput();
@@ -650,12 +653,13 @@ export class DrawingApp {
     // Show/populate the box and line style panels based on the active tool
     // and the current selection (single click or rubber-band multi-select).
     refreshStyleControls() {
-        if (!this.boxStyleManager || !this.lineStyleManager) return;
+        if (!this.boxStyleManager || !this.lineStyleManager || !this.colorManager) return;
         const selected = this.selectedElements.length > 0
             ? this.selectedElements
             : (this.selectedElement ? [this.selectedElement] : []);
         this.boxStyleManager.syncControls(selected, this.currentTool);
         this.lineStyleManager.syncControls(selected, this.currentTool);
+        this.colorManager.syncControl(selected);
     }
 
     renderSelectionHighlights(ctx) {

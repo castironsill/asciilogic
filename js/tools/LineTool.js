@@ -105,6 +105,7 @@ export class LineTool {
     // Overridden by BoxTool to apply fill/pattern instead.
     finalizeElement(element) {
         element.lineStyle = this.app.lineStyleManager.getLineStyle();
+        element.color = this.app.colorManager.getColor();
     }
 
     getCursor() {

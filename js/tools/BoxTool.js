@@ -35,6 +35,7 @@ export class BoxTool extends LineTool {
         const boxStyle = this.app.boxStyleManager.getBoxStyle();
         element.fill = boxStyle.fill;
         element.pattern = boxStyle.pattern;
-        element.color = boxStyle.color;
+        // Color is shared across all element types (ColorManager).
+        element.color = this.app.colorManager.getColor();
     }
 }

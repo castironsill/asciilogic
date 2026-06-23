@@ -1,17 +1,16 @@
 // utils/boxStyles.js
-
-import { COLORS, resolveColor, nameFromHex } from './colors.js';
+// Manages box/ellipse FILL and PATTERN only. Color is handled globally by
+// ColorManager (it applies to every element type).
 
 export class BoxStyleManager {
     constructor(app) {
         this.app = app;
         this.currentFill = 'none';
         this.currentPattern = 'none';
-        this.currentColor = '#ffffff';
         // When one or more box/ellipse shapes are selected, edits apply to
         // all of them instead of just setting the defaults for new shapes.
         this.editingElements = [];
-        
+
         // Define available patterns
         this.patterns = {
             none: { name: 'None', ascii: ' ' },
@@ -24,13 +23,10 @@ export class BoxStyleManager {
             diagonal: { name: 'Diagonal', ascii: '╱' },
             crosshatch: { name: 'Cross', ascii: '╳' }
         };
-        
-        // Available colors come from the shared palette (colors.js)
-        this.colors = COLORS;
 
         this.setupEventListeners();
     }
-    
+
     setupEventListeners() {
         // Visibility is driven by DrawingApp.refreshStyleControls() which
         // considers both the active tool and the current selection.
@@ -42,20 +38,12 @@ export class BoxStyleManager {
                 this.setFill(e.target.value);
             });
         }
-        
+
         // Pattern dropdown
         const patternSelect = document.getElementById('box-pattern-select');
         if (patternSelect) {
             patternSelect.addEventListener('change', (e) => {
                 this.setPattern(e.target.value);
-            });
-        }
-        
-        // Color dropdown
-        const colorSelect = document.getElementById('box-color-select');
-        if (colorSelect) {
-            colorSelect.addEventListener('change', (e) => {
-                this.setColor(e.target.value);
             });
         }
     }
@@ -93,16 +81,6 @@ export class BoxStyleManager {
             this.commitEdit();
         } else {
             this.currentPattern = pattern;
-        }
-    }
-
-    setColor(color) {
-        const hex = resolveColor(color);
-        if (this.editingElements.length) {
-            this.editingElements.forEach(el => { el.color = hex; });
-            this.commitEdit();
-        } else {
-            this.currentColor = hex;
         }
     }
 
@@ -145,10 +123,6 @@ export class BoxStyleManager {
                 const patternSelect = document.getElementById('box-pattern-select');
                 if (patternSelect) patternSelect.value = rep.pattern;
             }
-
-            const colorName = nameFromHex(rep.color);
-            const colorSelect = document.getElementById('box-color-select');
-            if (colorName && colorSelect) colorSelect.value = colorName;
         } else {
             this.updatePatternVisibility(this.currentFill);
         }
@@ -157,8 +131,7 @@ export class BoxStyleManager {
     getBoxStyle() {
         return {
             fill: this.currentFill,
-            pattern: this.currentPattern,
-            color: this.currentColor
+            pattern: this.currentPattern
         };
     }
     
