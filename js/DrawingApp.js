@@ -44,6 +44,7 @@ export class DrawingApp {
         this.textInput = null;
         this.textPosition = null;
         this.editingElement = null;
+        this.editingLabelElement = null;
         
         // Initialize canvas references first
         this.gridCanvas = document.getElementById('grid-canvas');
@@ -305,6 +306,9 @@ export class DrawingApp {
         if (element && element.type === 'text') {
             this.selectedElement = element;
             this.editTextElement(element, e.clientX, e.clientY);
+        } else if (element && (element.type === 'line' || element.type === 'arrow')) {
+            this.selectedElement = element;
+            this.editConnectorLabel(element, e.clientX, e.clientY);
         }
     }
     
@@ -556,6 +560,26 @@ export class DrawingApp {
         }, 10);
     }
 
+    // Edit the label that sits in the middle of a line/arrow.
+    editConnectorLabel(element, clickX, clickY) {
+        this.textInput.style.display = 'block';
+        this.textInput.style.left = clickX + 'px';
+        this.textInput.style.top = (clickY - 10) + 'px';
+        this.textInput.style.fontSize = (element.labelFontSize || 14) + 'px';
+        this.textInput.value = element.label || '';
+
+        this.textInput.style.visibility = 'visible';
+        this.textInput.style.opacity = '1';
+
+        this.editingLabelElement = element;
+        this.autoSizeTextInput();
+
+        setTimeout(() => {
+            this.textInput.focus();
+            this.textInput.select();
+        }, 10);
+    }
+
     startTextInput(clickX, clickY, canvasX, canvasY) {
         const snappedX = this.grid.snapToGrid(canvasX);
         const snappedY = this.grid.snapToGrid(canvasY);
@@ -590,7 +614,17 @@ export class DrawingApp {
     
     finishTextInput() {
         const text = this.textInput.value.trim();
-        
+
+        if (this.editingLabelElement) {
+            // Empty clears the label.
+            this.editingLabelElement.label = text || undefined;
+            this.editingLabelElement = null;
+            this.history.saveState();
+            this.render();
+            this.cancelTextInput();
+            return;
+        }
+
         if (this.editingElement) {
             if (text) {
                 this.editingElement.text = text;
@@ -617,6 +651,7 @@ export class DrawingApp {
         this.textInput.value = '';
         this.textPosition = null;
         this.editingElement = null;
+        this.editingLabelElement = null;
     }
     
     render() {

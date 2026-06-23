@@ -77,6 +77,36 @@ export function getTextDimensions(element, ctx = null) {
     return { fontSize, lineHeight, lines, lineCount: lines.length, width, height: lines.length * lineHeight };
 }
 
+// The point halfway along a connector's path (through its bend, if any) —
+// where a line label is centered.
+export function connectorMidpoint(el) {
+    const pts = [{ x: el.startX, y: el.startY }];
+    if (el.bendX !== undefined) pts.push({ x: el.bendX, y: el.bendY });
+    pts.push({ x: el.endX, y: el.endY });
+
+    const lens = [];
+    let total = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const d = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y);
+        lens.push(d);
+        total += d;
+    }
+    if (total === 0) return { x: el.startX, y: el.startY };
+
+    let half = total / 2;
+    for (let i = 0; i < lens.length; i++) {
+        if (half <= lens[i]) {
+            const t = lens[i] ? half / lens[i] : 0;
+            return {
+                x: pts[i].x + (pts[i + 1].x - pts[i].x) * t,
+                y: pts[i].y + (pts[i + 1].y - pts[i].y) * t
+            };
+        }
+        half -= lens[i];
+    }
+    return pts[pts.length - 1];
+}
+
 export function getNormalizedBox(box) {
     return {
         minX: Math.min(box.startX, box.endX),

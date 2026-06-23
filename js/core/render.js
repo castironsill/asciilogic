@@ -1,6 +1,6 @@
 // js/core/render.js - Rendering functions
 
-import { getElementsBounds } from '../utils/geometry.js';
+import { getElementsBounds, connectorMidpoint } from '../utils/geometry.js';
 import { zigzagPoints, connectorCorners } from '../utils/zigzag.js';
 
 export class Renderer {
@@ -19,10 +19,12 @@ export class Renderer {
         switch (element.type) {
             case 'line':
                 this.drawLine(ctx, element);
+                if (element.label) this.drawConnectorLabel(ctx, element);
                 break;
             case 'arrow':
                 this.drawLine(ctx, element);
                 this.drawArrowHead(ctx, element);
+                if (element.label) this.drawConnectorLabel(ctx, element);
                 break;
             case 'box':
                 this.drawBox(ctx, element);
@@ -79,6 +81,34 @@ export class Renderer {
         ctx.restore();
     }
     
+    // Draw a connector's label centered on the line, with a background
+    // panel so it stays readable over the stroke.
+    drawConnectorLabel(ctx, element) {
+        const fontSize = element.labelFontSize || 14;
+        const lines = String(element.label).split('\n');
+        const lineHeight = fontSize * 1.2;
+        const mid = connectorMidpoint(element);
+
+        ctx.save();
+        ctx.font = `${fontSize}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        let maxWidth = 0;
+        for (const line of lines) maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
+        const h = lines.length * lineHeight;
+
+        const bg = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg') || '#1a1a1a';
+        ctx.fillStyle = bg.trim() || '#1a1a1a';
+        ctx.fillRect(mid.x - maxWidth / 2 - 3, mid.y - h / 2 - 1, maxWidth + 6, h + 2);
+
+        ctx.fillStyle = element.color || getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
+        lines.forEach((line, i) => {
+            ctx.fillText(line, mid.x, mid.y - h / 2 + lineHeight * (i + 0.5));
+        });
+        ctx.restore();
+    }
+
     drawArrowHead(ctx, element) {
         // Arrow heads are always solid
         ctx.save();

@@ -2,6 +2,7 @@
 
 import { hexToAutocadIndex } from './colors.js';
 import { zigzagPoints, connectorCorners } from './zigzag.js';
+import { connectorMidpoint } from './geometry.js';
 
 export class ExportManager {
     constructor(app) {
@@ -175,7 +176,24 @@ export class ExportManager {
                 this.drawArrowHeads(grid, el, toGridX, toGridY);
             }
         });
-        
+
+        // Draw connector labels (centered on the line midpoint).
+        this.app.elements.forEach(el => {
+            if ((el.type === 'line' || el.type === 'arrow') && el.label) {
+                const mid = connectorMidpoint(el);
+                const gx = toGridX(mid.x);
+                const gy = toGridY(mid.y);
+                const lines = String(el.label).split('\n');
+                lines.forEach((line, li) => {
+                    const sx = gx - Math.floor(line.length / 2);
+                    const ry = gy - Math.floor(lines.length / 2) + li;
+                    for (let i = 0; i < line.length; i++) {
+                        if (this.isValidCell(grid, ry, sx + i)) grid[ry][sx + i] = line[i];
+                    }
+                });
+            }
+        });
+
         // Convert grid to string
         return grid.map(row => row.join('')).join('\n');
     }
@@ -508,6 +526,23 @@ export class ExportManager {
                     
                     svg += `\n    <path d="M ${el.endX} ${el.endY} L ${x1} ${y1} M ${el.endX} ${el.endY} L ${x2} ${y2}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round"${transform}/>`;
                 }
+
+                // Mid-line label with a background panel.
+                if (el.label) {
+                    const mid = connectorMidpoint(el);
+                    const fontSize = el.labelFontSize || 14;
+                    const lines = String(el.label).split('\n');
+                    const charW = fontSize * 0.6;
+                    const maxLen = Math.max(...lines.map(l => l.length));
+                    const boxW = maxLen * charW + 6;
+                    const boxH = lines.length * fontSize * 1.2 + 2;
+                    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    svg += `\n    <rect x="${mid.x - boxW / 2}" y="${mid.y - boxH / 2}" width="${boxW}" height="${boxH}" fill="#1a1a1a"${transform}/>`;
+                    const tspans = lines
+                        .map((line, i) => `<tspan x="${mid.x}" dy="${i === 0 ? 0 : fontSize * 1.2}">${esc(line)}</tspan>`)
+                        .join('');
+                    svg += `\n    <text x="${mid.x}" y="${mid.y - boxH / 2 + fontSize}" font-family="monospace" font-size="${fontSize}" fill="${color}" text-anchor="middle"${transform}>${tspans}</text>`;
+                }
             } else if (el.type === 'box') {
                 const x = Math.min(el.startX, el.endX);
                 const y = Math.min(el.startY, el.endY);
@@ -709,6 +744,21 @@ export class ExportManager {
                         'solid',
                         colorIndex
                     );
+                }
+
+                // Mid-line label
+                if (el.label) {
+                    const mid = connectorMidpoint(el);
+                    const fontSize = el.labelFontSize || 14;
+                    String(el.label).split('\n').forEach((line, i) => {
+                        dxf += this.dxfText(
+                            mid.x * scale,
+                            flipY(mid.y + i * fontSize * 1.2),
+                            line,
+                            fontSize * scale,
+                            colorIndex
+                        );
+                    });
                 }
             } else if (el.type === 'box') {
                 // Export box with color and fill

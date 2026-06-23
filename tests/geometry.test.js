@@ -5,6 +5,7 @@ import {
   isPointNearElement,
   isElementInBox,
   getElementsBounds,
+  connectorMidpoint,
 } from '../js/utils/geometry.js';
 
 // Minimal 2D-context stub: only what the geometry helpers touch.
@@ -77,6 +78,21 @@ describe('isElementInBox', () => {
   it('includes a line with at least one endpoint inside', () => {
     const line = { type: 'line', startX: 50, startY: 50, endX: 500, endY: 500 };
     expect(isElementInBox(line, box)).toBe(true);
+  });
+});
+
+describe('connectorMidpoint', () => {
+  it('is the center of a straight line', () => {
+    expect(connectorMidpoint({ startX: 0, startY: 0, endX: 100, endY: 0 })).toEqual({ x: 50, y: 0 });
+  });
+
+  it('lands at the corner of an equal-length L bend', () => {
+    expect(connectorMidpoint({ startX: 0, startY: 0, bendX: 100, bendY: 0, endX: 100, endY: 100 }))
+      .toEqual({ x: 100, y: 0 });
+  });
+
+  it('falls back to the start for a zero-length connector', () => {
+    expect(connectorMidpoint({ startX: 5, startY: 7, endX: 5, endY: 7 })).toEqual({ x: 5, y: 7 });
   });
 });
 
