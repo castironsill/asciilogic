@@ -3,7 +3,7 @@ import { DrawingApp } from './DrawingApp.js';
 
 // Bump on each release so you can confirm the browser isn't serving a
 // stale cached build (a hard refresh — Ctrl+Shift+R — clears it).
-export const APP_VERSION = '2.5.1';
+export const APP_VERSION = '2.6.0';
 
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {

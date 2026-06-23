@@ -1,6 +1,7 @@
 // js/core/render.js - Rendering functions
 
 import { getElementsBounds } from '../utils/geometry.js';
+import { zigzagPoints, connectorCorners } from '../utils/zigzag.js';
 
 export class Renderer {
     constructor(app) {
@@ -39,7 +40,19 @@ export class Renderer {
     
     drawLine(ctx, element) {
         ctx.save();
-        
+
+        if (element.lineStyle === 'zigzag') {
+            // Zig-zag is real geometry rather than a dash pattern.
+            ctx.setLineDash([]);
+            const pts = zigzagPoints(connectorCorners(element));
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+            ctx.stroke();
+            ctx.restore();
+            return;
+        }
+
         // Apply line style
         if (element.lineStyle === 'dashed') {
             ctx.setLineDash([10, 5]); // 10px dash, 5px gap
@@ -48,19 +61,19 @@ export class Renderer {
         } else {
             ctx.setLineDash([]); // Solid line (default)
         }
-        
+
         ctx.beginPath();
         ctx.moveTo(element.startX, element.startY);
-        
+
         if (element.bendX !== undefined) {
             ctx.lineTo(element.bendX, element.bendY);
             ctx.lineTo(element.endX, element.endY);
         } else {
             ctx.lineTo(element.endX, element.endY);
         }
-        
+
         ctx.stroke();
-        
+
         // Reset line dash
         ctx.setLineDash([]);
         ctx.restore();

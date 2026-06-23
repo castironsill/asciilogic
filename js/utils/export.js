@@ -1,6 +1,7 @@
 // utils/export.js
 
 import { hexToAutocadIndex } from './colors.js';
+import { zigzagPoints, connectorCorners } from './zigzag.js';
 
 export class ExportManager {
     constructor(app) {
@@ -471,22 +472,24 @@ export class ExportManager {
             
             if (el.type === 'line' || el.type === 'arrow') {
                 // Draw line path
-                let path = `M ${el.startX} ${el.startY}`;
-                
-                if (el.bendX !== undefined && el.bendY !== undefined) {
-                    path += ` L ${el.bendX} ${el.bendY} L ${el.endX} ${el.endY}`;
+                let path;
+                if (el.lineStyle === 'zigzag') {
+                    const pts = zigzagPoints(connectorCorners(el));
+                    path = `M ${pts[0].x} ${pts[0].y}` + pts.slice(1).map(p => ` L ${p.x} ${p.y}`).join('');
+                } else if (el.bendX !== undefined && el.bendY !== undefined) {
+                    path = `M ${el.startX} ${el.startY} L ${el.bendX} ${el.bendY} L ${el.endX} ${el.endY}`;
                 } else {
-                    path += ` L ${el.endX} ${el.endY}`;
+                    path = `M ${el.startX} ${el.startY} L ${el.endX} ${el.endY}`;
                 }
-                
-                // Add stroke-dasharray for line styles
+
+                // Add stroke-dasharray for line styles (zigzag is real geometry)
                 let strokeDasharray = '';
                 if (el.lineStyle === 'dashed') {
                     strokeDasharray = ' stroke-dasharray="10,5"';
                 } else if (el.lineStyle === 'dotted') {
                     strokeDasharray = ' stroke-dasharray="2,4"';
                 }
-                
+
                 svg += `\n    <path d="${path}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"${strokeDasharray}${transform}/>`;
                 
                 // Draw arrow head if needed
