@@ -37,6 +37,8 @@ export class Clipboard {
             if (copiedEl.type === 'text') {
                 copiedEl._offsetX = copiedEl.x - centerX;
                 copiedEl._offsetY = copiedEl.y - centerY;
+            } else if (copiedEl.type === 'polyline') {
+                copiedEl._pointOffsets = copiedEl.points.map(p => ({ x: p.x - centerX, y: p.y - centerY }));
             } else if (copiedEl.type === 'box') {
                 copiedEl._startOffsetX = copiedEl.startX - centerX;
                 copiedEl._startOffsetY = copiedEl.startY - centerY;
@@ -87,6 +89,9 @@ export class Clipboard {
                 newElement.y = snappedY + (newElement._offsetY || 0);
                 delete newElement._offsetX;
                 delete newElement._offsetY;
+            } else if (newElement.type === 'polyline') {
+                newElement.points = (newElement._pointOffsets || []).map(o => ({ x: snappedX + o.x, y: snappedY + o.y }));
+                delete newElement._pointOffsets;
             } else if (newElement.type === 'box' || newElement.type === 'ellipse') {
                 newElement.startX = snappedX + (newElement._startOffsetX || 0);
                 newElement.startY = snappedY + (newElement._startOffsetY || 0);

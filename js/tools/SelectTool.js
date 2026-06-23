@@ -130,35 +130,10 @@ export class SelectTool {
             if (this.dragHandle === 'move') {
                 if (this.app.selectedElements.length > 0) {
                     this.app.selectedElements.forEach((el, index) => {
-                        const original = this.originalElements[index];
-                        if (el.type === 'text') {
-                            el.x = original.x + dx;
-                            el.y = original.y + dy;
-                        } else {
-                            el.startX = original.startX + dx;
-                            el.startY = original.startY + dy;
-                            el.endX = original.endX + dx;
-                            el.endY = original.endY + dy;
-                            if (el.bendX !== undefined) {
-                                el.bendX = original.bendX + dx;
-                                el.bendY = original.bendY + dy;
-                            }
-                        }
+                        this.moveElement(el, this.originalElements[index], dx, dy);
                     });
                 } else {
-                    if (this.app.selectedElement.type === 'text') {
-                        this.app.selectedElement.x = this.originalElement.x + dx;
-                        this.app.selectedElement.y = this.originalElement.y + dy;
-                    } else {
-                        this.app.selectedElement.startX = this.originalElement.startX + dx;
-                        this.app.selectedElement.startY = this.originalElement.startY + dy;
-                        this.app.selectedElement.endX = this.originalElement.endX + dx;
-                        this.app.selectedElement.endY = this.originalElement.endY + dy;
-                        if (this.app.selectedElement.bendX !== undefined) {
-                            this.app.selectedElement.bendX = this.originalElement.bendX + dx;
-                            this.app.selectedElement.bendY = this.originalElement.bendY + dy;
-                        }
-                    }
+                    this.moveElement(this.app.selectedElement, this.originalElement, dx, dy);
                 }
             } else if (this.dragHandle === 'start') {
                 this.app.selectedElement.startX = snappedX;
@@ -228,6 +203,25 @@ export class SelectTool {
         }
     }
     
+    // Translate an element by (dx,dy) from its original geometry.
+    moveElement(el, original, dx, dy) {
+        if (el.type === 'text') {
+            el.x = original.x + dx;
+            el.y = original.y + dy;
+        } else if (el.type === 'polyline') {
+            el.points = original.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
+        } else {
+            el.startX = original.startX + dx;
+            el.startY = original.startY + dy;
+            el.endX = original.endX + dx;
+            el.endY = original.endY + dy;
+            if (el.bendX !== undefined) {
+                el.bendX = original.bendX + dx;
+                el.bendY = original.bendY + dy;
+            }
+        }
+    }
+
     // Resize a box/ellipse by dragging the named handle; the opposite
     // edge(s) stay anchored. Works off the original (pre-drag) geometry.
     resizeBox(handle, snappedX, snappedY) {

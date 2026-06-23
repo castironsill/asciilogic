@@ -1,6 +1,6 @@
 // js/DrawingApp.js - Main application class
 
-import { SelectTool, LineTool, TextTool, ArrowTool, BoxTool, EllipseTool, DimensionTool } from './tools/index.js';
+import { SelectTool, LineTool, TextTool, ArrowTool, BoxTool, EllipseTool, DimensionTool, PolylineTool } from './tools/index.js';
 import { Grid } from './utils/grid.js';
 import { ExportManager } from './utils/export.js';
 import { AsciiImporter } from './utils/asciiImport.js';
@@ -136,7 +136,8 @@ export class DrawingApp {
             arrow: new ArrowTool(this),
             box: new BoxTool(this),
             ellipse: new EllipseTool(this),
-            dimension: new DimensionTool(this)
+            dimension: new DimensionTool(this),
+            polyline: new PolylineTool(this)
         };
     }
     
@@ -144,6 +145,11 @@ export class DrawingApp {
         // Tool selection
         document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
             btn.addEventListener('click', () => {
+                // Abandon an in-progress polyline when changing tools.
+                if (this.tools && this.tools.polyline && this.tools.polyline.active &&
+                    btn.dataset.tool !== 'polyline') {
+                    this.tools.polyline.cancel();
+                }
                 document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.currentTool = btn.dataset.tool;
@@ -303,6 +309,13 @@ export class DrawingApp {
         const x = (e.clientX - rect.left - this.offsetX) / this.zoom;
         const y = (e.clientY - rect.top - this.offsetY) / this.zoom;
         
+        // Double-click also finishes an in-progress polyline.
+        const polyTool = this.tools.polyline;
+        if (polyTool && polyTool.active) {
+            polyTool.finish();
+            return;
+        }
+
         const element = this.getElementAt(x, y);
         if (element && element.type === 'text') {
             this.selectedElement = element;
@@ -330,7 +343,15 @@ export class DrawingApp {
         if (exportModal && exportModal.style.display === 'flex') {
             return; // Don't process shortcuts when export modal is open
         }
-        
+
+        // Finish an in-progress polyline with Esc or Enter.
+        const polyTool = this.tools.polyline;
+        if (polyTool && polyTool.active && (e.key === 'Escape' || e.key === 'Enter')) {
+            e.preventDefault();
+            polyTool.finish();
+            return;
+        }
+
         // Check if user is typing in any input field
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             return;
@@ -368,6 +389,7 @@ export class DrawingApp {
             'b': 'box',
             'c': 'ellipse',
             'd': 'dimension',
+            'p': 'polyline',
             't': 'text'
         };
 
@@ -409,6 +431,7 @@ export class DrawingApp {
                 box: 'crosshair',
                 ellipse: 'crosshair',
                 dimension: 'crosshair',
+                polyline: 'crosshair',
                 text: 'text'
             };
             this.mainCanvas.style.cursor = cursors[this.currentTool] || 'default';
@@ -747,6 +770,13 @@ export class DrawingApp {
                     const maxY = Math.max(el.startY, el.endY);
                     ctx.strokeRect(minX - 5, minY - 5, maxX - minX + 10, maxY - minY + 10);
                     ctx.setLineDash([]);
+                } else if (el.type === 'polyline') {
+                    ctx.save();
+                    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+                    ctx.lineWidth = 4;
+                    ctx.globalAlpha = 0.3;
+                    this.renderer.drawPolyline(ctx, el);
+                    ctx.restore();
                 } else if (el.type === 'line' || el.type === 'arrow' || el.type === 'dimension') {
                     ctx.save();
                     ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
@@ -789,6 +819,12 @@ export class DrawingApp {
                  [maxX, maxY], [midX, maxY], [minX, maxY], [minX, midY]].forEach(([hx, hy]) => {
                     ctx.fillRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
                 });
+            } else if (this.selectedElement.type === 'polyline') {
+                ctx.save();
+                ctx.lineWidth = 4;
+                ctx.globalAlpha = 0.3;
+                this.renderer.drawPolyline(ctx, this.selectedElement);
+                ctx.restore();
             } else if (this.selectedElement.type === 'line' || this.selectedElement.type === 'arrow' || this.selectedElement.type === 'dimension') {
                 ctx.setLineDash([]);
                 const handleSize = 6;

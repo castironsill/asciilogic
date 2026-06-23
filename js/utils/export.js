@@ -97,6 +97,13 @@ export class ExportManager {
                 minY = Math.min(minY, el.startY, el.endY);
                 maxX = Math.max(maxX, el.startX, el.endX);
                 maxY = Math.max(maxY, el.startY, el.endY);
+            } else if (el.type === 'polyline') {
+                (el.points || []).forEach(p => {
+                    minX = Math.min(minX, p.x);
+                    minY = Math.min(minY, p.y);
+                    maxX = Math.max(maxX, p.x);
+                    maxY = Math.max(maxY, p.y);
+                });
             } else {
                 minX = Math.min(minX, el.startX, el.endX);
                 minY = Math.min(minY, el.startY, el.endY);
@@ -165,6 +172,16 @@ export class ExportManager {
                 this.drawBoxToGrid(grid, el, toGridX, toGridY, chars);
             } else if (el.type === 'ellipse') {
                 this.drawEllipseToGrid(grid, el, toGridX, toGridY, chars);
+            } else if (el.type === 'polyline') {
+                const pts = el.points || [];
+                for (let i = 0; i < pts.length - 1; i++) {
+                    this.drawStraightLine(
+                        grid,
+                        toGridX(pts[i].x), toGridY(pts[i].y),
+                        toGridX(pts[i + 1].x), toGridY(pts[i + 1].y),
+                        chars
+                    );
+                }
             } else if (el.type === 'text') {
                 this.drawTextToGrid(grid, el, toGridX, toGridY);
             }
@@ -581,6 +598,16 @@ export class ExportManager {
                 }
 
                 svg += `\n    <ellipse cx="${ecx}" cy="${ecy}" rx="${rx}" ry="${ry}" stroke="${color}" stroke-width="2" ${fillAttr}${transform}/>`;
+            } else if (el.type === 'polyline') {
+                const pts = el.points || [];
+                if (pts.length >= 2) {
+                    const src = el.lineStyle === 'zigzag' ? zigzagPoints(pts) : pts;
+                    const path = `M ${src[0].x} ${src[0].y}` + src.slice(1).map(p => ` L ${p.x} ${p.y}`).join('');
+                    let strokeDasharray = '';
+                    if (el.lineStyle === 'dashed') strokeDasharray = ' stroke-dasharray="10,5"';
+                    else if (el.lineStyle === 'dotted') strokeDasharray = ' stroke-dasharray="2,4"';
+                    svg += `\n    <path d="${path}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"${strokeDasharray}${transform}/>`;
+                }
             } else if (el.type === 'dimension') {
                 svg += `\n    <line x1="${el.startX}" y1="${el.startY}" x2="${el.endX}" y2="${el.endY}" stroke="${color}" stroke-width="2"${transform}/>`;
 
@@ -691,6 +718,8 @@ export class ExportManager {
                 maxY = Math.max(maxY, el.y + (lineCount - 1) * lineHeight);
             } else if (el.type === 'box') {
                 maxY = Math.max(maxY, el.startY, el.endY);
+            } else if (el.type === 'polyline') {
+                (el.points || []).forEach(p => { maxY = Math.max(maxY, p.y); });
             } else {
                 maxY = Math.max(maxY, el.startY, el.endY);
                 if (el.bendY !== undefined) {
@@ -790,6 +819,15 @@ export class ExportManager {
                 dxf += this.dxfBox(el, scale, flipY, colorIndex);
             } else if (el.type === 'ellipse') {
                 dxf += this.dxfEllipse(el, scale, flipY, colorIndex);
+            } else if (el.type === 'polyline') {
+                const pts = el.points || [];
+                for (let i = 0; i < pts.length - 1; i++) {
+                    dxf += this.dxfLine(
+                        pts[i].x * scale, flipY(pts[i].y),
+                        pts[i + 1].x * scale, flipY(pts[i + 1].y),
+                        el.lineStyle || 'solid', colorIndex
+                    );
+                }
             } else if (el.type === 'dimension') {
                 dxf += this.dxfLine(el.startX * scale, flipY(el.startY), el.endX * scale, flipY(el.endY), 'solid', colorIndex);
                 const ddx = el.endX - el.startX, ddy = el.endY - el.startY;

@@ -35,6 +35,9 @@ export class Renderer {
             case 'dimension':
                 this.drawDimension(ctx, element);
                 break;
+            case 'polyline':
+                this.drawPolyline(ctx, element);
+                break;
             case 'text':
                 this.drawText(ctx, element);
                 break;
@@ -142,6 +145,31 @@ export class Renderer {
             const my = (element.startY + element.endY) / 2;
             this.drawTextPanel(ctx, mx, my, element.text, element.fontSize || 14, element.color);
         }
+    }
+
+    drawPolyline(ctx, element) {
+        const pts = element.points || [];
+        if (pts.length < 2) return;
+
+        ctx.save();
+        const stroke = (points) => {
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+            ctx.stroke();
+        };
+
+        if (element.lineStyle === 'zigzag') {
+            ctx.setLineDash([]);
+            stroke(zigzagPoints(pts));
+        } else {
+            if (element.lineStyle === 'dashed') ctx.setLineDash([10, 5]);
+            else if (element.lineStyle === 'dotted') ctx.setLineDash([2, 4]);
+            else ctx.setLineDash([]);
+            stroke(pts);
+            ctx.setLineDash([]);
+        }
+        ctx.restore();
     }
 
     drawArrowHead(ctx, element) {

@@ -38,6 +38,13 @@ export function getElementsBounds(elements, ctx = null) {
             minY = Math.min(minY, el.startY, el.endY);
             maxX = Math.max(maxX, el.startX, el.endX);
             maxY = Math.max(maxY, el.startY, el.endY);
+        } else if (el.type === 'polyline') {
+            (el.points || []).forEach(p => {
+                minX = Math.min(minX, p.x);
+                minY = Math.min(minY, p.y);
+                maxX = Math.max(maxX, p.x);
+                maxY = Math.max(maxY, p.y);
+            });
         } else {
             minX = Math.min(minX, el.startX, el.endX);
             minY = Math.min(minY, el.startY, el.endY);
@@ -148,6 +155,14 @@ export function isPointNearElement(x, y, element, ctx, fontSize = 16) {
         const nx = (x - cx) / rx;
         const ny = (y - cy) / ry;
         return nx * nx + ny * ny <= 1.15;
+    } else if (element.type === 'polyline') {
+        const pts = element.points || [];
+        for (let i = 0; i < pts.length - 1; i++) {
+            if (distanceToLineSegment(x, y, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y) < threshold) {
+                return true;
+            }
+        }
+        return false;
     } else {
         if (element.bendX !== undefined) {
             return distanceToLineSegment(x, y, element.startX, element.startY, element.bendX, element.bendY) < threshold ||
@@ -170,6 +185,10 @@ export function isElementInBox(element, box) {
 
         return !(elMaxX < box.minX || elMinX > box.maxX ||
                  elMaxY < box.minY || elMinY > box.maxY);
+    } else if (element.type === 'polyline') {
+        return (element.points || []).some(p =>
+            p.x >= box.minX && p.x <= box.maxX && p.y >= box.minY && p.y <= box.maxY
+        );
     } else {
         const points = [
             { x: element.startX, y: element.startY },
