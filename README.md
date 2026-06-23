@@ -1,240 +1,86 @@
 # asciilogic
 
-A powerful browser-based ASCII diagram tool for creating logic diagrams, flowcharts, elevator schematics, and technical documentation. Create clean ASCII diagrams that can be embedded directly in code, documentation, or emails.
+A browser-based tool for sketching ASCII diagrams — boxes, lines, arrows,
+circles, and text — and exporting them as ASCII or Unicode art (or PNG, SVG,
+DXF). Built for simple, quick diagrams you can paste straight into code
+comments, READMEs, or chat.
 
-🌐 **Live Demo: [https://asciilogic.com](https://asciilogic.com)**
+Live: https://asciilogic.com
 
-## ✨ Features
+## Features
 
-- **Drawing Tools**
-  - 📏 Lines with automatic 90° bends and multiple styles (solid, dashed, dotted)
-  - ➡️ Directional arrows with line styles
-  - ⬜ Boxes with fills (solid colors, hatching patterns)
-  - ⭕ Circles and ellipses with the same fill/pattern/color options
-  - 📝 Multi-line text with adjustable font sizes (Enter for a new line, Esc to finish)
-  - 🎨 Color picker for all elements (8 color options)
+- Tools: select, line, arrow, box, ellipse/circle, text.
+- Lines and arrows attach to shapes and stay connected when you move or
+  resize the shape.
+- 90-degree line bends and grid snapping (the grid can be hidden without
+  turning off snapping).
+- Box and ellipse fills: none, solid, or hatch patterns (diagonal,
+  crosshatch, horizontal, vertical, dots).
+- One color control that applies to any element type.
+- Multi-line text with adjustable font size.
+- Resize handles for boxes and circles.
+- Multi-select by drag-box or Shift/Ctrl/Cmd+click; move or restyle the
+  selection together.
+- Copy/paste/duplicate, undo/redo, and autosave to the browser.
+- Import existing ASCII art back into editable elements.
+- Export to ASCII (plain or Unicode box-drawing), PNG, SVG, or DXF.
 
-- **Smart Editing**
-  - 🎯 Grid snapping for perfect alignment
-  - 👁️ Grid toggle - hide/show grid while preserving snap settings
-  - 📋 Copy/Paste functionality (Ctrl+C/V) with cursor positioning
-  - 🔄 Multi-selection and group operations
-  - ↩️ Undo/Redo functionality
-  - 💾 Auto-save to browser storage
+## Keyboard shortcuts
 
-- **Box Styling**
-  - 🎨 Fill options: None, Solid, or Pattern
-  - 📐 Pattern types: Diagonal, Crosshatch, Horizontal, Vertical, Dots (Light/Medium/Dense)
-  - 🌈 All patterns respect element colors
-  - 👻 Semi-transparent fills to see overlapped content
+| Key | Action |
+| --- | --- |
+| `V` `L` `A` `B` `C` `T` | Select, Line, Arrow, Box, Ellipse, Text |
+| `Ctrl+C` / `Ctrl+V` / `Ctrl+D` | Copy / Paste / Duplicate |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo |
+| `Ctrl+S` | Save |
+| `Delete` | Delete selection |
+| `Shift`/`Ctrl`/`Cmd` + Click | Add or remove from selection |
+| `Shift+Drag` or middle-mouse | Pan |
+| Mouse wheel | Zoom |
 
-- **Import/Export**
-  - 📤 Export to multiple formats:
-    - ASCII Basic & Extended Unicode
-    - PNG (high-resolution)
-    - SVG (scalable, with patterns)
-    - DXF (for CAD software)
-  - 📥 Import existing ASCII diagrams
-  - 📋 Copy to clipboard functionality
-  - 🎁 Export wrappers (Markdown fence, C-style comments, decorative box)
+When typing text, `Enter` starts a new line; `Esc` or clicking away finishes.
 
-- **Navigation**
-  - 🔍 Zoom and pan controls
-  - 🎯 Fit to content
-  - ⌨️ Keyboard shortcuts
-  - 🖱️ Middle-mouse pan
+## Running locally
 
-## 🚀 Quick Start
+It is a static site with no build step. Serve the folder with any static
+server — for example VS Code's Live Server extension (right-click
+`index.html` → Open with Live Server), or:
 
-Visit [asciilogic.com](https://asciilogic.com) to start creating diagrams instantly - no installation required!
+    python -m http.server
 
-## ⌨️ Keyboard Shortcuts
+then open http://localhost:8000.
 
-- `V` - Select tool
-- `L` - Line tool
-- `A` - Arrow tool
-- `B` - Box tool
-- `C` - Ellipse / circle tool
-- `T` - Text tool
-- `Ctrl+C` - Copy selected elements
-- `Ctrl+V` - Paste at cursor position
-- `Ctrl+D` - Duplicate selected elements
-- `Ctrl+Z` - Undo
-- `Ctrl+Y` - Redo
-- `Ctrl+S` - Save
-- `Delete` - Delete selected
-- `Shift`/`Ctrl`/`Cmd` + Click - Add/remove element from selection (Select tool)
-- `Shift+Drag` - Pan canvas (or middle-mouse drag)
+## Tests
 
-## 🎨 New Features
+The pure logic (geometry, export/import, connectors, color) is covered by
+Vitest. The shipped site has no runtime dependencies; the test tooling is a
+dev dependency only.
 
-### Box Fills & Patterns
-Create visually distinct boxes with various fill styles:
-- Solid fills with transparency
-- Hatching patterns for technical diagrams
-- All patterns respect the selected color
-- Perfect for highlighting different components
+    npm install
+    npm test
 
-### Smart Copy/Paste
-- Copy elements with `Ctrl+C`
-- Paste at current cursor position with `Ctrl+V`
-- Maintains relative positions for multiple elements
-- Quick duplicate with `Ctrl+D`
+## Project structure
 
-### Grid Toggle
-- Click the grid icon or set grid size to 0 to hide grid
-- Elements still snap to invisible grid
-- Better visibility for filled/patterned boxes
+    index.html        Markup and toolbar
+    css/style.css     Styles
+    js/
+      app.js          Entry point
+      DrawingApp.js   App controller
+      core/           render, history, storage, selection, clipboard, connectors
+      tools/          select, line, arrow, box, ellipse, text
+      utils/          export, ascii import, geometry, grid, colors, styles
+    tests/            Vitest suites
 
-### Enhanced Line Styles
-- Solid, dashed, and dotted lines
-- Styles available for both lines and arrows
-- Exported correctly in all formats
+## Deployment
 
-## 🎯 Use Cases
+Hosted on GitHub Pages with a custom domain via the `CNAME` file. Pushing to
+`main` deploys.
 
-- **Software Documentation** - Embed diagrams directly in code comments
-- **Network Diagrams** - Show system architecture and data flow
-- **Elevator Control Systems** - Document shaft layouts and control logic
-- **State Machines** - Create clear state transition diagrams with styled boxes
-- **Flowcharts** - Design process flows with visual distinction
-- **Technical Schematics** - Use patterns to indicate different materials or states
-- **README Files** - Add visual diagrams to your GitHub projects
+## License
 
-## 📸 Example Output
+MIT. See [LICENSE](LICENSE).
 
-```
-┌─────────────┐         ┌─────────────┐
-│   Client    │────────▶│   Server    │
-└─────────────┘         └─────────────┘
-       │                        │
-       │                        │
-       ▼                        ▼
-┌─────────────┐         ┌─────────────┐
-│   Browser   │         │  Database   │
-└─────────────┘         └─────────────┘
-```
+## Acknowledgments
 
-With patterns and colors, you can create more expressive diagrams:
-- Filled boxes for emphasis
-- Hatched patterns for different component types
-- Colored elements for better visual organization
-
-## 🛠️ Development
-
-### Prerequisites
-- Modern web browser
-- VS Code (recommended)
-- Live Server extension
-
-### Local Development
-
-1. Clone the repository
-   ```bash
-   git clone https://github.com/castironsill/asciilogic.git
-   cd asciilogic
-   ```
-
-2. Open in VS Code
-   ```bash
-   code .
-   ```
-
-3. Install Live Server extension in VS Code
-
-4. Right-click on `index.html` → "Open with Live Server"
-
-5. Start developing! The page will auto-refresh on changes.
-
-### Testing
-
-The shipped site has **zero runtime dependencies**. Tests are dev-only and run
-on the pure logic modules (geometry, ASCII export/import) via [Vitest](https://vitest.dev/):
-
-```bash
-npm install   # one-time, installs devDependencies (vitest, jsdom)
-npm test      # run the suite once
-npm run test:watch  # re-run on change
-```
-
-### Project Structure
-
-```
-asciilogic/
-├── index.html          # Main HTML file
-├── css/
-│   └── style.css      # Styles
-├── js/
-│   ├── app.js         # Entry point
-│   ├── DrawingApp.js  # Main application
-│   ├── core/          # Core functionality
-│   ├── tools/         # Drawing tools
-│   ├── ui/            # UI components
-│   └── utils/         # Utilities
-│       ├── export.js  # Export functionality
-│       ├── grid.js    # Grid system
-│       ├── lineStyles.js    # Line styling
-│       └── boxStyles.js     # Box styling
-└── README.md
-```
-
-## 🌐 Deployment
-
-This project is deployed on GitHub Pages with a custom domain.
-
-### Deploy Your Own
-
-1. Fork this repository
-2. Enable GitHub Pages in repository settings
-3. Select source: Deploy from branch (main)
-4. Your site will be available at `https://[username].github.io/asciilogic`
-
-### Custom Domain Setup
-
-1. Add a `CNAME` file with your domain
-2. Configure DNS A records to GitHub's IPs
-3. Enable HTTPS in GitHub Pages settings
-
-## 🚨 Browser Compatibility
-
-- ✅ Chrome/Edge (Recommended)
-- ✅ Firefox
-- ✅ Safari
-- ✅ Any modern browser with Canvas support
-
-SVG exports are optimized for cross-browser compatibility.
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-- Report bugs
-- Suggest new features
-- Submit pull requests
-
-### Recent Contributors
-Thank you to everyone who has helped improve asciilogic!
-
-## 📝 License
-
-This project is open source and available under the MIT License.
-
-## 🙏 Acknowledgments
-
-- Inspired by [ASCIIFlow](https://asciiflow.com) - a fantastic ASCII diagram tool
-- Built with vanilla JavaScript for maximum performance and compatibility
-- Designed for engineers and developers who need quick, clean ASCII diagrams
-- Special thanks to the community for feature requests and bug reports
-
-## 🎉 What's New
-
-### Version 2.0 (Latest)
-- 🎨 Box fills and patterns with color support
-- 📋 Copy/paste functionality with smart positioning
-- 👁️ Grid toggle for better visibility
-- 🔀 Multiple line styles (solid, dashed, dotted)
-- 🖼️ Enhanced export formats with proper style support
-- 🛠️ Fixed grid size 0 handling for all exports
-
----
-
-Made with ❤️ for the developer community. If you find this tool useful, please ⭐ star this repository!
+Inspired by [ASCIIFlow](https://asciiflow.com). Written in vanilla JavaScript
+with no framework.
