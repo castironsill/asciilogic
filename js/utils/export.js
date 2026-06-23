@@ -1,5 +1,7 @@
 // utils/export.js
 
+import { hexToAutocadIndex } from './colors.js';
+
 export class ExportManager {
     constructor(app) {
         this.app = app;
@@ -659,18 +661,9 @@ export class ExportManager {
     }
     
     getAutocadColorIndex(color) {
-        // Map hex colors to AutoCAD color indices
-        const colorMap = {
-            '#ffffff': 7,  // white
-            '#808080': 8,  // gray
-            '#ff0000': 1,  // red
-            '#0000ff': 5,  // blue
-            '#00ff00': 3,  // green
-            '#ffff00': 2,  // yellow
-            '#00ffff': 4,  // cyan
-            '#ff00ff': 6   // magenta
-        };
-        return colorMap[color] || 7; // default to white
+        // Delegate to the shared palette so DXF indices stay in sync with
+        // the actual on-screen hex values (colors.js).
+        return hexToAutocadIndex(color);
     }
     
     dxfBox(element, scale, flipY, colorIndex) {

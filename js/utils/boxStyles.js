@@ -1,5 +1,7 @@
 // utils/boxStyles.js
 
+import { COLORS, resolveColor } from './colors.js';
+
 export class BoxStyleManager {
     constructor(app) {
         this.app = app;
@@ -20,18 +22,9 @@ export class BoxStyleManager {
             crosshatch: { name: 'Cross', ascii: '╳' }
         };
         
-        // Define available colors
-        this.colors = {
-            white: { name: 'White', value: '#ffffff' },
-            gray: { name: 'Gray', value: '#808080' },
-            red: { name: 'Red', value: '#ff4444' },
-            blue: { name: 'Blue', value: '#4444ff' },
-            green: { name: 'Green', value: '#44ff44' },
-            yellow: { name: 'Yellow', value: '#ffff44' },
-            cyan: { name: 'Cyan', value: '#44ffff' },
-            magenta: { name: 'Magenta', value: '#ff44ff' }
-        };
-        
+        // Available colors come from the shared palette (colors.js)
+        this.colors = COLORS;
+
         this.setupEventListeners();
     }
     
@@ -94,7 +87,7 @@ export class BoxStyleManager {
     }
     
     setColor(color) {
-        this.currentColor = this.colors[color]?.value || color;
+        this.currentColor = resolveColor(color);
     }
     
     getBoxStyle() {
