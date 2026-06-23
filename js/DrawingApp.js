@@ -4,6 +4,7 @@ import { SelectTool, LineTool, TextTool, ArrowTool, BoxTool } from './tools/inde
 import { Grid } from './utils/grid.js';
 import { ExportManager } from './utils/export.js';
 import { AsciiImporter } from './utils/asciiImport.js';
+import { Clipboard } from './core/clipboard.js';
 import { History } from './core/history.js';
 import { Storage } from './core/storage.js';
 import { Renderer } from './core/render.js';
@@ -31,9 +32,6 @@ export class DrawingApp {
         this.selectedElement = null;
         this.selectedElements = [];
         this.tempElement = null;
-        
-        // Clipboard for copy/paste
-        this.clipboard = [];
         
         // Mouse tracking
         this.lastMousePos = { x: 0, y: 0 };
@@ -112,6 +110,7 @@ export class DrawingApp {
         this.grid = new Grid(this);
         this.exportManager = new ExportManager(this);
         this.asciiImporter = new AsciiImporter(this);
+        this.clipboardManager = new Clipboard(this);
         this.history = new History(this);
         this.storage = new Storage(this);
         this.renderer = new Renderer(this);
@@ -760,127 +759,20 @@ export class DrawingApp {
         this.asciiImporter.import(text);
     }
     
-    copySelected() {
-        this.clipboard = [];
-        
-        // Determine what to copy
-        const elementsToCopy = this.selectedElements.length > 0 
-            ? this.selectedElements 
-            : (this.selectedElement ? [this.selectedElement] : []);
-        
-        if (elementsToCopy.length === 0) {
-            notifications.show('Nothing selected to copy');
-            return;
-        }
-        
-        // Find the bounds of selected elements to calculate center point
-        const bounds = getElementsBounds(elementsToCopy, this.ctx);
+    // Clipboard operations are delegated to the Clipboard module.
+    get clipboard() {
+        return this.clipboardManager.items;
+    }
 
-        // Calculate center point of selection
-        const centerX = (bounds.minX + bounds.maxX) / 2;
-        const centerY = (bounds.minY + bounds.maxY) / 2;
-        
-        // Deep copy elements with relative positions to center
-        elementsToCopy.forEach(el => {
-            const copiedEl = JSON.parse(JSON.stringify(el));
-            
-            // Store relative position to center
-            if (copiedEl.type === 'text') {
-                copiedEl._offsetX = copiedEl.x - centerX;
-                copiedEl._offsetY = copiedEl.y - centerY;
-            } else if (copiedEl.type === 'box') {
-                copiedEl._startOffsetX = copiedEl.startX - centerX;
-                copiedEl._startOffsetY = copiedEl.startY - centerY;
-                copiedEl._endOffsetX = copiedEl.endX - centerX;
-                copiedEl._endOffsetY = copiedEl.endY - centerY;
-            } else {
-                copiedEl._startOffsetX = copiedEl.startX - centerX;
-                copiedEl._startOffsetY = copiedEl.startY - centerY;
-                copiedEl._endOffsetX = copiedEl.endX - centerX;
-                copiedEl._endOffsetY = copiedEl.endY - centerY;
-                if (copiedEl.bendX !== undefined) {
-                    copiedEl._bendOffsetX = copiedEl.bendX - centerX;
-                    copiedEl._bendOffsetY = copiedEl.bendY - centerY;
-                }
-            }
-            
-            this.clipboard.push(copiedEl);
-        });
-        
-        notifications.show(`Copied ${this.clipboard.length} element${this.clipboard.length > 1 ? 's' : ''}`);
+    copySelected() {
+        this.clipboardManager.copy();
     }
-    
+
     pasteElements() {
-        if (this.clipboard.length === 0) {
-            return;
-        }
-        
-        // Clear current selection
-        this.selectedElement = null;
-        this.selectedElements = [];
-        
-        // Get current mouse position (use last known position)
-        const pasteX = this.lastMousePos.x;
-        const pasteY = this.lastMousePos.y;
-        
-        // Snap to grid
-        const snappedX = this.grid.snapToGrid(pasteX);
-        const snappedY = this.grid.snapToGrid(pasteY);
-        
-        // Paste each element
-        this.clipboard.forEach(el => {
-            const newElement = JSON.parse(JSON.stringify(el));
-            
-            // Position relative to cursor
-            if (newElement.type === 'text') {
-                newElement.x = snappedX + (newElement._offsetX || 0);
-                newElement.y = snappedY + (newElement._offsetY || 0);
-                delete newElement._offsetX;
-                delete newElement._offsetY;
-            } else if (newElement.type === 'box') {
-                newElement.startX = snappedX + (newElement._startOffsetX || 0);
-                newElement.startY = snappedY + (newElement._startOffsetY || 0);
-                newElement.endX = snappedX + (newElement._endOffsetX || 0);
-                newElement.endY = snappedY + (newElement._endOffsetY || 0);
-                delete newElement._startOffsetX;
-                delete newElement._startOffsetY;
-                delete newElement._endOffsetX;
-                delete newElement._endOffsetY;
-            } else {
-                newElement.startX = snappedX + (newElement._startOffsetX || 0);
-                newElement.startY = snappedY + (newElement._startOffsetY || 0);
-                newElement.endX = snappedX + (newElement._endOffsetX || 0);
-                newElement.endY = snappedY + (newElement._endOffsetY || 0);
-                if (newElement.bendX !== undefined) {
-                    newElement.bendX = snappedX + (newElement._bendOffsetX || 0);
-                    newElement.bendY = snappedY + (newElement._bendOffsetY || 0);
-                    delete newElement._bendOffsetX;
-                    delete newElement._bendOffsetY;
-                }
-                delete newElement._startOffsetX;
-                delete newElement._startOffsetY;
-                delete newElement._endOffsetX;
-                delete newElement._endOffsetY;
-            }
-            
-            // Add to elements and selection
-            this.elements.push(newElement);
-            this.selectedElements.push(newElement);
-        });
-        
-        // Save state and render
-        this.history.saveState();
-        this.render();
-        notifications.show(`Pasted ${this.clipboard.length} element${this.clipboard.length > 1 ? 's' : ''}`);
+        this.clipboardManager.paste();
     }
-    
+
     duplicateSelected() {
-        // First copy
-        this.copySelected();
-        
-        // Then paste immediately
-        if (this.clipboard.length > 0) {
-            this.pasteElements();
-        }
+        this.clipboardManager.duplicate();
     }
 }

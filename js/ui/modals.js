@@ -370,16 +370,8 @@ export class ModalManager {
                 }
             }
             
-            // Create a temporary textarea to copy from
-            const tempTextarea = document.createElement('textarea');
-            tempTextarea.value = textToCopy;
-            tempTextarea.style.position = 'fixed';
-            tempTextarea.style.opacity = '0';
-            document.body.appendChild(tempTextarea);
-            tempTextarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempTextarea);
-            
+            this.writeToClipboard(textToCopy);
+
             // Show copy feedback
             const copyBtn = document.getElementById('copy-to-clipboard');
             const originalText = copyBtn.textContent;
@@ -388,6 +380,27 @@ export class ModalManager {
                 copyBtn.textContent = originalText;
             }, 2000);
         }
+    }
+
+    // Prefer the async Clipboard API; fall back to execCommand for
+    // older browsers or non-secure (http) contexts where it's unavailable.
+    writeToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).catch(() => this.legacyCopy(text));
+        } else {
+            this.legacyCopy(text);
+        }
+    }
+
+    legacyCopy(text) {
+        const tempTextarea = document.createElement('textarea');
+        tempTextarea.value = text;
+        tempTextarea.style.position = 'fixed';
+        tempTextarea.style.opacity = '0';
+        document.body.appendChild(tempTextarea);
+        tempTextarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextarea);
     }
     
     downloadExport() {
