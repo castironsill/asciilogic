@@ -149,7 +149,8 @@ export class DrawingApp {
                     this.selectedElements = [];
                     this.render();
                 }
-                
+
+                this.refreshStyleControls();
                 this.updateCursor();
             });
         });
@@ -636,10 +637,22 @@ export class DrawingApp {
         
         // Draw selection highlights
         this.renderSelectionHighlights(ctx);
-        
+
         ctx.restore();
+
+        // Keep the style panels in sync with the current selection.
+        this.refreshStyleControls();
     }
-    
+
+    // Show/populate the box and line style panels based on the active tool
+    // and current single-element selection.
+    refreshStyleControls() {
+        if (!this.boxStyleManager || !this.lineStyleManager) return;
+        const selected = this.selectedElement; // single-selection editing
+        this.boxStyleManager.syncControls(selected, this.currentTool);
+        this.lineStyleManager.syncControls(selected, this.currentTool);
+    }
+
     renderSelectionHighlights(ctx) {
         if (this.selectedElements.length > 0) {
             ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');

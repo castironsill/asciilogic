@@ -4,9 +4,11 @@ export class LineStyleManager {
     constructor(app) {
         this.app = app;
         this.currentStyle = 'solid';
+        // When a line/arrow is selected, edits apply to it.
+        this.editingElement = null;
         this.setupEventListeners();
     }
-    
+
     setupEventListeners() {
         // Line style button listeners
         const styleButtons = document.querySelectorAll('.style-btn');
@@ -15,31 +17,40 @@ export class LineStyleManager {
                 this.setLineStyle(btn.dataset.style);
             });
         });
-        
-        // Show/hide line style controls based on selected tool
-        this.app.eventBus?.on('toolChanged', (tool) => {
-            const lineStyleControls = document.getElementById('line-style-controls');
-            if (lineStyleControls) {
-                // Show controls for line and arrow tools
-                lineStyleControls.style.display = (tool === 'line' || tool === 'arrow') ? 'flex' : 'none';
-            }
-        });
+        // Visibility/population is driven by DrawingApp.refreshStyleControls().
     }
-    
+
     setLineStyle(style) {
-        this.currentStyle = style;
-        
-        // Update button states
-        const styleButtons = document.querySelectorAll('.style-btn');
-        styleButtons.forEach(btn => {
-            if (btn.dataset.style === style) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+        this.setActiveButton(style);
+
+        if (this.editingElement) {
+            this.editingElement.lineStyle = style;
+            this.app.history.saveState();
+            this.app.render();
+        } else {
+            this.currentStyle = style;
+        }
+    }
+
+    setActiveButton(style) {
+        document.querySelectorAll('.style-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.style === style);
         });
     }
-    
+
+    // Show/populate the line controls based on the current selection and tool.
+    syncControls(selected, tool) {
+        const controls = document.getElementById('line-style-controls');
+        if (!controls) return;
+
+        const editing = selected && (selected.type === 'line' || selected.type === 'arrow');
+        const drawing = (tool === 'line' || tool === 'arrow');
+        controls.style.display = (editing || drawing) ? 'flex' : 'none';
+        this.editingElement = editing ? selected : null;
+
+        this.setActiveButton(editing ? (selected.lineStyle || 'solid') : this.currentStyle);
+    }
+
     getLineStyle() {
         return this.currentStyle;
     }

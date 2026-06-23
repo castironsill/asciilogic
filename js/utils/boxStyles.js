@@ -1,6 +1,6 @@
 // utils/boxStyles.js
 
-import { COLORS, resolveColor } from './colors.js';
+import { COLORS, resolveColor, nameFromHex } from './colors.js';
 
 export class BoxStyleManager {
     constructor(app) {
@@ -8,6 +8,9 @@ export class BoxStyleManager {
         this.currentFill = 'none';
         this.currentPattern = 'none';
         this.currentColor = '#ffffff';
+        // When a box/ellipse is selected, edits apply to it instead of
+        // just setting the defaults for new shapes.
+        this.editingElement = null;
         
         // Define available patterns
         this.patterns = {
@@ -29,14 +32,9 @@ export class BoxStyleManager {
     }
     
     setupEventListeners() {
-        // Show/hide box style controls based on selected tool
-        this.app.eventBus?.on('toolChanged', (tool) => {
-            const boxStyleControls = document.getElementById('box-style-controls');
-            if (boxStyleControls) {
-                boxStyleControls.style.display = (tool === 'box' || tool === 'ellipse') ? 'flex' : 'none';
-            }
-        });
-        
+        // Visibility is driven by DrawingApp.refreshStyleControls() which
+        // considers both the active tool and the current selection.
+
         // Fill dropdown
         const fillSelect = document.getElementById('box-fill-select');
         if (fillSelect) {
@@ -63,33 +61,88 @@ export class BoxStyleManager {
     }
     
     setFill(fill) {
-        this.currentFill = fill;
-        
-        // Update pattern dropdown visibility
-        const patternSelect = document.getElementById('box-pattern-select');
-        const patternLabel = document.querySelector('label[for="box-pattern-select"]');
-        
-        if (fill === 'pattern') {
-            if (patternSelect) patternSelect.style.display = 'block';
-            if (patternLabel) patternLabel.style.display = 'block';
-            if (this.currentPattern === 'none') {
-                this.currentPattern = 'diagonal';
+        this.updatePatternVisibility(fill);
+
+        if (this.editingElement) {
+            this.editingElement.fill = fill;
+            if (fill === 'pattern' && (!this.editingElement.pattern || this.editingElement.pattern === 'none')) {
+                this.editingElement.pattern = 'diagonal';
+                const patternSelect = document.getElementById('box-pattern-select');
                 if (patternSelect) patternSelect.value = 'diagonal';
             }
+            this.commitEdit();
         } else {
-            if (patternSelect) patternSelect.style.display = 'none';
-            if (patternLabel) patternLabel.style.display = 'none';
+            this.currentFill = fill;
+            if (fill === 'pattern' && this.currentPattern === 'none') {
+                this.currentPattern = 'diagonal';
+                const patternSelect = document.getElementById('box-pattern-select');
+                if (patternSelect) patternSelect.value = 'diagonal';
+            }
         }
     }
-    
+
     setPattern(pattern) {
-        this.currentPattern = pattern;
+        if (this.editingElement) {
+            this.editingElement.pattern = pattern;
+            this.commitEdit();
+        } else {
+            this.currentPattern = pattern;
+        }
     }
-    
+
     setColor(color) {
-        this.currentColor = resolveColor(color);
+        const hex = resolveColor(color);
+        if (this.editingElement) {
+            this.editingElement.color = hex;
+            this.commitEdit();
+        } else {
+            this.currentColor = hex;
+        }
     }
-    
+
+    commitEdit() {
+        this.app.history.saveState();
+        this.app.render();
+    }
+
+    updatePatternVisibility(fill) {
+        const patternSelect = document.getElementById('box-pattern-select');
+        const patternLabel = document.querySelector('label[for="box-pattern-select"]');
+        const show = fill === 'pattern';
+        if (patternSelect) patternSelect.style.display = show ? 'block' : 'none';
+        if (patternLabel) patternLabel.style.display = show ? 'block' : 'none';
+    }
+
+    // Show/populate the box controls based on the current selection and tool.
+    // Called by DrawingApp.refreshStyleControls().
+    syncControls(selected, tool) {
+        const controls = document.getElementById('box-style-controls');
+        if (!controls) return;
+
+        const editing = selected && (selected.type === 'box' || selected.type === 'ellipse');
+        const drawing = (tool === 'box' || tool === 'ellipse');
+        controls.style.display = (editing || drawing) ? 'flex' : 'none';
+        this.editingElement = editing ? selected : null;
+
+        if (editing) {
+            const fill = selected.fill || 'none';
+            const fillSelect = document.getElementById('box-fill-select');
+            if (fillSelect) fillSelect.value = fill;
+            this.updatePatternVisibility(fill);
+
+            if (selected.pattern && selected.pattern !== 'none') {
+                const patternSelect = document.getElementById('box-pattern-select');
+                if (patternSelect) patternSelect.value = selected.pattern;
+            }
+
+            const colorName = nameFromHex(selected.color);
+            const colorSelect = document.getElementById('box-color-select');
+            if (colorName && colorSelect) colorSelect.value = colorName;
+        } else {
+            this.updatePatternVisibility(this.currentFill);
+        }
+    }
+
     getBoxStyle() {
         return {
             fill: this.currentFill,

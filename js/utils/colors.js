@@ -24,6 +24,16 @@ export function resolveColor(value, fallback = '#ffffff') {
     return value; // already a hex/string
 }
 
+// Reverse lookup: on-screen hex -> palette name (or null if not a palette color).
+export function nameFromHex(hex) {
+    if (!hex) return null;
+    const norm = hex.toLowerCase();
+    for (const [name, c] of Object.entries(COLORS)) {
+        if (c.hex.toLowerCase() === norm) return name;
+    }
+    return null;
+}
+
 // Map an on-screen hex to the closest AutoCAD Color Index for DXF export.
 export function hexToAutocadIndex(hex) {
     if (!hex) return 7;
