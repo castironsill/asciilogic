@@ -76,8 +76,9 @@ export class Clipboard {
         const snappedX = this.app.grid.snapToGrid(pasteX);
         const snappedY = this.app.grid.snapToGrid(pasteY);
 
-        // Paste each element
-        this.items.forEach(el => {
+        // Build the pasted elements, repositioned relative to the cursor.
+        const idMap = new Map();
+        const newElements = this.items.map(el => {
             const newElement = JSON.parse(JSON.stringify(el));
 
             // Position relative to cursor
@@ -86,7 +87,7 @@ export class Clipboard {
                 newElement.y = snappedY + (newElement._offsetY || 0);
                 delete newElement._offsetX;
                 delete newElement._offsetY;
-            } else if (newElement.type === 'box') {
+            } else if (newElement.type === 'box' || newElement.type === 'ellipse') {
                 newElement.startX = snappedX + (newElement._startOffsetX || 0);
                 newElement.startY = snappedY + (newElement._startOffsetY || 0);
                 newElement.endX = snappedX + (newElement._endOffsetX || 0);
@@ -112,9 +113,28 @@ export class Clipboard {
                 delete newElement._endOffsetY;
             }
 
-            // Add to elements and selection
-            this.app.elements.push(newElement);
-            this.app.selectedElements.push(newElement);
+            // Give the copy a fresh id, remembering the old->new mapping.
+            const oldId = newElement.id;
+            newElement.id = this.app.genId();
+            if (oldId) idMap.set(oldId, newElement.id);
+            return newElement;
+        });
+
+        // Remap connector bindings: keep them if the target was copied too,
+        // otherwise drop them so a pasted connector doesn't grab the original.
+        newElements.forEach(el => {
+            ['startBinding', 'endBinding'].forEach(key => {
+                if (el[key]) {
+                    el[key] = idMap.has(el[key].id)
+                        ? { ...el[key], id: idMap.get(el[key].id) }
+                        : null;
+                }
+            });
+        });
+
+        newElements.forEach(el => {
+            this.app.elements.push(el);
+            this.app.selectedElements.push(el);
         });
 
         // Save state and render

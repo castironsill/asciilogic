@@ -106,6 +106,11 @@ export class LineTool {
     finalizeElement(element) {
         element.lineStyle = this.app.lineStyleManager.getLineStyle();
         element.color = this.app.colorManager.getColor();
+        // Attach either end that lands on a shape so it follows when moved.
+        if (this.app.connectors) {
+            this.app.connectors.bindEndpoint(element, 'start');
+            this.app.connectors.bindEndpoint(element, 'end');
+        }
     }
 
     getCursor() {

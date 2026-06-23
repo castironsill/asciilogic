@@ -6,6 +6,7 @@ import { ExportManager } from './utils/export.js';
 import { AsciiImporter } from './utils/asciiImport.js';
 import { Clipboard } from './core/clipboard.js';
 import { Selection } from './core/selection.js';
+import { Connectors } from './core/connectors.js';
 import { History } from './core/history.js';
 import { Storage } from './core/storage.js';
 import { Renderer } from './core/render.js';
@@ -68,6 +69,7 @@ export class DrawingApp {
         if (this.storage.hasData()) {
             if (confirm('Restore previous drawing?')) {
                 this.storage.load();
+                this.ensureIds();
                 this.render();
             }
         }
@@ -114,6 +116,7 @@ export class DrawingApp {
         this.asciiImporter = new AsciiImporter(this);
         this.clipboardManager = new Clipboard(this);
         this.selection = new Selection(this);
+        this.connectors = new Connectors(this);
         this.history = new History(this);
         this.storage = new Storage(this);
         this.renderer = new Renderer(this);
@@ -516,10 +519,22 @@ export class DrawingApp {
     }
     
     addElement(element) {
+        if (!element.id) element.id = this.genId();
         this.elements.push(element);
         this.history.saveState();
         this.storage.save();
         this.render();
+    }
+
+    // Stable unique id used to bind connectors to shapes.
+    genId() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+        return 'el-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    // Backfill ids on any elements that lack one (older saved data, imports).
+    ensureIds() {
+        this.elements.forEach(el => { if (!el.id) el.id = this.genId(); });
     }
     
     editTextElement(element, clickX, clickY) {
@@ -606,7 +621,10 @@ export class DrawingApp {
     
     render() {
         if (!this.ctx) return;
-        
+
+        // Keep bound connectors attached to their shapes before drawing.
+        if (this.connectors) this.connectors.refresh();
+
         const ctx = this.ctx;
         ctx.clearRect(0, 0, this.mainCanvas.width, this.mainCanvas.height);
         

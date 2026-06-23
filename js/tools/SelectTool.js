@@ -23,6 +23,11 @@ export class SelectTool {
             this.isDragging = true;
             this.dragHandle = handle.type;
             this.dragStart = { x, y };
+            // Detach a bound connector endpoint so it can be dragged freely;
+            // it re-binds on drop (handleMouseUp).
+            const sel = this.app.selectedElement;
+            if (sel && handle.type === 'start') sel.startBinding = null;
+            if (sel && handle.type === 'end') sel.endBinding = null;
             this.originalElement = JSON.parse(JSON.stringify(this.app.selectedElement));
             this.updateCursor(handle.type);
         } else {
@@ -201,11 +206,20 @@ export class SelectTool {
         }
 
         if (this.isDragging) {
+            const draggedHandle = this.dragHandle;
+            const sel = this.app.selectedElement;
+
             this.isDragging = false;
             this.dragHandle = null;
             this.dragStart = null;
             this.originalElement = null;
             this.originalElements = null;
+
+            // A dropped connector endpoint binds to whatever shape it's over.
+            if (sel && this.app.connectors && (draggedHandle === 'start' || draggedHandle === 'end')) {
+                this.app.connectors.bindEndpoint(sel, draggedHandle);
+            }
+
             this.app.history.saveState();
             this.updateCursor();
             return;
