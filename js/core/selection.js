@@ -42,7 +42,7 @@ export class Selection {
 
         const threshold = 8 / this.app.zoom;
 
-        if (sel.type === 'line' || sel.type === 'arrow') {
+        if (sel.type === 'line' || sel.type === 'arrow' || sel.type === 'dimension') {
             if (Math.abs(x - sel.startX) < threshold && Math.abs(y - sel.startY) < threshold) {
                 return { type: 'start' };
             }

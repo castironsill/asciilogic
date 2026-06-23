@@ -159,7 +159,7 @@ export class ExportManager {
         
         // Draw elements
         this.app.elements.forEach(el => {
-            if (el.type === 'line' || el.type === 'arrow') {
+            if (el.type === 'line' || el.type === 'arrow' || el.type === 'dimension') {
                 this.drawLineToGrid(grid, el, toGridX, toGridY, chars, useExtended);
             } else if (el.type === 'box') {
                 this.drawBoxToGrid(grid, el, toGridX, toGridY, chars);
@@ -177,13 +177,16 @@ export class ExportManager {
             }
         });
 
-        // Draw connector labels (centered on the line midpoint).
+        // Draw connector labels and dimension values (centered on the line).
         this.app.elements.forEach(el => {
-            if ((el.type === 'line' || el.type === 'arrow') && el.label) {
+            const labelText = el.type === 'dimension'
+                ? el.text
+                : ((el.type === 'line' || el.type === 'arrow') ? el.label : null);
+            if (labelText) {
                 const mid = connectorMidpoint(el);
                 const gx = toGridX(mid.x);
                 const gy = toGridY(mid.y);
-                const lines = String(el.label).split('\n');
+                const lines = String(labelText).split('\n');
                 lines.forEach((line, li) => {
                     const sx = gx - Math.floor(line.length / 2);
                     const ry = gy - Math.floor(lines.length / 2) + li;
@@ -578,6 +581,28 @@ export class ExportManager {
                 }
 
                 svg += `\n    <ellipse cx="${ecx}" cy="${ecy}" rx="${rx}" ry="${ry}" stroke="${color}" stroke-width="2" ${fillAttr}${transform}/>`;
+            } else if (el.type === 'dimension') {
+                svg += `\n    <line x1="${el.startX}" y1="${el.startY}" x2="${el.endX}" y2="${el.endY}" stroke="${color}" stroke-width="2"${transform}/>`;
+
+                const ddx = el.endX - el.startX;
+                const ddy = el.endY - el.startY;
+                const dlen = Math.hypot(ddx, ddy) || 1;
+                const tpx = -ddy / dlen, tpy = ddx / dlen;
+                const tk = 5;
+                svg += `\n    <line x1="${el.startX - tpx * tk}" y1="${el.startY - tpy * tk}" x2="${el.startX + tpx * tk}" y2="${el.startY + tpy * tk}" stroke="${color}" stroke-width="2"${transform}/>`;
+                svg += `\n    <line x1="${el.endX - tpx * tk}" y1="${el.endY - tpy * tk}" x2="${el.endX + tpx * tk}" y2="${el.endY + tpy * tk}" stroke="${color}" stroke-width="2"${transform}/>`;
+
+                if (el.text) {
+                    const mx = (el.startX + el.endX) / 2;
+                    const my = (el.startY + el.endY) / 2;
+                    const fontSize = el.fontSize || 14;
+                    const charW = fontSize * 0.6;
+                    const boxW = String(el.text).length * charW + 6;
+                    const boxH = fontSize * 1.2 + 2;
+                    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    svg += `\n    <rect x="${mx - boxW / 2}" y="${my - boxH / 2}" width="${boxW}" height="${boxH}" fill="#1a1a1a"${transform}/>`;
+                    svg += `\n    <text x="${mx}" y="${my + fontSize / 3}" font-family="monospace" font-size="${fontSize}" fill="${color}" text-anchor="middle"${transform}>${esc(String(el.text))}</text>`;
+                }
             } else if (el.type === 'text') {
                 const fontSize = el.fontSize || 16;
                 const lineHeight = fontSize * 1.2;
@@ -765,6 +790,17 @@ export class ExportManager {
                 dxf += this.dxfBox(el, scale, flipY, colorIndex);
             } else if (el.type === 'ellipse') {
                 dxf += this.dxfEllipse(el, scale, flipY, colorIndex);
+            } else if (el.type === 'dimension') {
+                dxf += this.dxfLine(el.startX * scale, flipY(el.startY), el.endX * scale, flipY(el.endY), 'solid', colorIndex);
+                const ddx = el.endX - el.startX, ddy = el.endY - el.startY;
+                const dlen = Math.hypot(ddx, ddy) || 1;
+                const tpx = -ddy / dlen, tpy = ddx / dlen, tk = 5;
+                dxf += this.dxfLine((el.startX - tpx * tk) * scale, flipY(el.startY - tpy * tk), (el.startX + tpx * tk) * scale, flipY(el.startY + tpy * tk), 'solid', colorIndex);
+                dxf += this.dxfLine((el.endX - tpx * tk) * scale, flipY(el.endY - tpy * tk), (el.endX + tpx * tk) * scale, flipY(el.endY + tpy * tk), 'solid', colorIndex);
+                if (el.text) {
+                    const mx = (el.startX + el.endX) / 2, my = (el.startY + el.endY) / 2;
+                    dxf += this.dxfText(mx * scale, flipY(my), String(el.text), (el.fontSize || 14) * scale, colorIndex);
+                }
             } else if (el.type === 'text') {
                 // Export each line as its own TEXT entity (DXF TEXT is single-line)
                 const fontSize = el.fontSize || 16;

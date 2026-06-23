@@ -32,6 +32,9 @@ export class Renderer {
             case 'ellipse':
                 this.drawEllipse(ctx, element);
                 break;
+            case 'dimension':
+                this.drawDimension(ctx, element);
+                break;
             case 'text':
                 this.drawText(ctx, element);
                 break;
@@ -81,13 +84,17 @@ export class Renderer {
         ctx.restore();
     }
     
-    // Draw a connector's label centered on the line, with a background
-    // panel so it stays readable over the stroke.
+    // Draw a connector's label centered on the line.
     drawConnectorLabel(ctx, element) {
-        const fontSize = element.labelFontSize || 14;
-        const lines = String(element.label).split('\n');
-        const lineHeight = fontSize * 1.2;
         const mid = connectorMidpoint(element);
+        this.drawTextPanel(ctx, mid.x, mid.y, element.label, element.labelFontSize || 14, element.color);
+    }
+
+    // Centered (possibly multi-line) text with a background panel so it stays
+    // readable over whatever it sits on. Shared by labels and dimensions.
+    drawTextPanel(ctx, cx, cy, text, fontSize, color) {
+        const lines = String(text).split('\n');
+        const lineHeight = fontSize * 1.2;
 
         ctx.save();
         ctx.font = `${fontSize}px monospace`;
@@ -100,13 +107,41 @@ export class Renderer {
 
         const bg = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg') || '#1a1a1a';
         ctx.fillStyle = bg.trim() || '#1a1a1a';
-        ctx.fillRect(mid.x - maxWidth / 2 - 3, mid.y - h / 2 - 1, maxWidth + 6, h + 2);
+        ctx.fillRect(cx - maxWidth / 2 - 3, cy - h / 2 - 1, maxWidth + 6, h + 2);
 
-        ctx.fillStyle = element.color || getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
+        ctx.fillStyle = color || getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
         lines.forEach((line, i) => {
-            ctx.fillText(line, mid.x, mid.y - h / 2 + lineHeight * (i + 0.5));
+            ctx.fillText(line, cx, cy - h / 2 + lineHeight * (i + 0.5));
         });
         ctx.restore();
+    }
+
+    // A not-to-scale dimension: a straight line with perpendicular end ticks
+    // and a value centered on it.
+    drawDimension(ctx, element) {
+        ctx.beginPath();
+        ctx.moveTo(element.startX, element.startY);
+        ctx.lineTo(element.endX, element.endY);
+        ctx.stroke();
+
+        const dx = element.endX - element.startX;
+        const dy = element.endY - element.startY;
+        const len = Math.hypot(dx, dy) || 1;
+        const px = -dy / len, py = dx / len; // perpendicular unit
+        const t = 5; // tick half-length
+
+        ctx.beginPath();
+        ctx.moveTo(element.startX - px * t, element.startY - py * t);
+        ctx.lineTo(element.startX + px * t, element.startY + py * t);
+        ctx.moveTo(element.endX - px * t, element.endY - py * t);
+        ctx.lineTo(element.endX + px * t, element.endY + py * t);
+        ctx.stroke();
+
+        if (element.text) {
+            const mx = (element.startX + element.endX) / 2;
+            const my = (element.startY + element.endY) / 2;
+            this.drawTextPanel(ctx, mx, my, element.text, element.fontSize || 14, element.color);
+        }
     }
 
     drawArrowHead(ctx, element) {

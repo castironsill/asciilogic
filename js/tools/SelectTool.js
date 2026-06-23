@@ -215,8 +215,10 @@ export class SelectTool {
             this.originalElement = null;
             this.originalElements = null;
 
-            // A dropped connector endpoint binds to whatever shape it's over.
-            if (sel && this.app.connectors && (draggedHandle === 'start' || draggedHandle === 'end')) {
+            // A dropped connector endpoint binds to whatever shape it's over
+            // (dimensions are not connectors, so they never bind).
+            if (sel && this.app.connectors && this.app.connectors.isConnector(sel) &&
+                (draggedHandle === 'start' || draggedHandle === 'end')) {
                 this.app.connectors.bindEndpoint(sel, draggedHandle);
             }
 

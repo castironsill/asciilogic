@@ -6,3 +6,4 @@ export { TextTool } from './TextTool.js';
 export { ArrowTool } from './ArrowTool.js';
 export { BoxTool } from './BoxTool.js';
 export { EllipseTool } from './EllipseTool.js';
+export { DimensionTool } from './DimensionTool.js';

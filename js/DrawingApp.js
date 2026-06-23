@@ -1,6 +1,6 @@
 // js/DrawingApp.js - Main application class
 
-import { SelectTool, LineTool, TextTool, ArrowTool, BoxTool, EllipseTool } from './tools/index.js';
+import { SelectTool, LineTool, TextTool, ArrowTool, BoxTool, EllipseTool, DimensionTool } from './tools/index.js';
 import { Grid } from './utils/grid.js';
 import { ExportManager } from './utils/export.js';
 import { AsciiImporter } from './utils/asciiImport.js';
@@ -44,7 +44,7 @@ export class DrawingApp {
         this.textInput = null;
         this.textPosition = null;
         this.editingElement = null;
-        this.editingLabelElement = null;
+        this.editingTextTarget = null;
         
         // Initialize canvas references first
         this.gridCanvas = document.getElementById('grid-canvas');
@@ -135,7 +135,8 @@ export class DrawingApp {
             text: new TextTool(this),
             arrow: new ArrowTool(this),
             box: new BoxTool(this),
-            ellipse: new EllipseTool(this)
+            ellipse: new EllipseTool(this),
+            dimension: new DimensionTool(this)
         };
     }
     
@@ -309,6 +310,9 @@ export class DrawingApp {
         } else if (element && (element.type === 'line' || element.type === 'arrow')) {
             this.selectedElement = element;
             this.editConnectorLabel(element, e.clientX, e.clientY);
+        } else if (element && element.type === 'dimension') {
+            this.selectedElement = element;
+            this.editDimensionValue(element, e.clientX, e.clientY);
         }
     }
     
@@ -363,6 +367,7 @@ export class DrawingApp {
             'a': 'arrow',
             'b': 'box',
             'c': 'ellipse',
+            'd': 'dimension',
             't': 'text'
         };
 
@@ -403,6 +408,7 @@ export class DrawingApp {
                 arrow: 'crosshair',
                 box: 'crosshair',
                 ellipse: 'crosshair',
+                dimension: 'crosshair',
                 text: 'text'
             };
             this.mainCanvas.style.cursor = cursors[this.currentTool] || 'default';
@@ -562,16 +568,26 @@ export class DrawingApp {
 
     // Edit the label that sits in the middle of a line/arrow.
     editConnectorLabel(element, clickX, clickY) {
+        this.openTextEditor(element, 'label', clickX, clickY, element.labelFontSize || 14);
+    }
+
+    // Edit a dimension's value (stored on `text`).
+    editDimensionValue(element, clickX, clickY) {
+        this.openTextEditor(element, 'text', clickX, clickY, element.fontSize || 14);
+    }
+
+    // Open the floating text editor bound to element[prop].
+    openTextEditor(element, prop, clickX, clickY, fontSize) {
         this.textInput.style.display = 'block';
         this.textInput.style.left = clickX + 'px';
         this.textInput.style.top = (clickY - 10) + 'px';
-        this.textInput.style.fontSize = (element.labelFontSize || 14) + 'px';
-        this.textInput.value = element.label || '';
+        this.textInput.style.fontSize = fontSize + 'px';
+        this.textInput.value = element[prop] || '';
 
         this.textInput.style.visibility = 'visible';
         this.textInput.style.opacity = '1';
 
-        this.editingLabelElement = element;
+        this.editingTextTarget = { element, prop };
         this.autoSizeTextInput();
 
         setTimeout(() => {
@@ -615,10 +631,11 @@ export class DrawingApp {
     finishTextInput() {
         const text = this.textInput.value.trim();
 
-        if (this.editingLabelElement) {
-            // Empty clears the label.
-            this.editingLabelElement.label = text || undefined;
-            this.editingLabelElement = null;
+        if (this.editingTextTarget) {
+            // Empty clears the value.
+            const { element, prop } = this.editingTextTarget;
+            element[prop] = text || undefined;
+            this.editingTextTarget = null;
             this.history.saveState();
             this.render();
             this.cancelTextInput();
@@ -651,7 +668,7 @@ export class DrawingApp {
         this.textInput.value = '';
         this.textPosition = null;
         this.editingElement = null;
-        this.editingLabelElement = null;
+        this.editingTextTarget = null;
     }
     
     render() {
@@ -730,7 +747,7 @@ export class DrawingApp {
                     const maxY = Math.max(el.startY, el.endY);
                     ctx.strokeRect(minX - 5, minY - 5, maxX - minX + 10, maxY - minY + 10);
                     ctx.setLineDash([]);
-                } else if (el.type === 'line' || el.type === 'arrow') {
+                } else if (el.type === 'line' || el.type === 'arrow' || el.type === 'dimension') {
                     ctx.save();
                     ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
                     ctx.lineWidth = 4;
@@ -772,7 +789,7 @@ export class DrawingApp {
                  [maxX, maxY], [midX, maxY], [minX, maxY], [minX, midY]].forEach(([hx, hy]) => {
                     ctx.fillRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
                 });
-            } else if (this.selectedElement.type === 'line' || this.selectedElement.type === 'arrow') {
+            } else if (this.selectedElement.type === 'line' || this.selectedElement.type === 'arrow' || this.selectedElement.type === 'dimension') {
                 ctx.setLineDash([]);
                 const handleSize = 6;
                 
