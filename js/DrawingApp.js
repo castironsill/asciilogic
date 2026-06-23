@@ -164,14 +164,14 @@ export class DrawingApp {
         // Text input
         this.textInput = document.getElementById('text-input');
         this.textInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                // Enter commits; Shift+Enter inserts a newline (default).
+            // Enter inserts a new line (default textarea behavior).
+            // Esc or Ctrl/Cmd+Enter finishes; clicking elsewhere also finishes.
+            if (e.key === 'Escape' || (e.key === 'Enter' && (e.ctrlKey || e.metaKey))) {
                 e.preventDefault();
                 this.finishTextInput();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                this.cancelTextInput();
             }
+            // Keep keystrokes from reaching the global shortcut handler.
+            e.stopPropagation();
         });
         // Grow the textarea to fit its content as the user types.
         this.textInput.addEventListener('input', () => this.autoSizeTextInput());
