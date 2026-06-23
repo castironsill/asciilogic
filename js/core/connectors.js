@@ -16,21 +16,17 @@ export function shapeBounds(shape) {
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-// Snap (px,py) to the nearest edge of the shape and record it as a fraction.
+// Record where (px,py) sits on the shape as a fraction of its box, so the
+// attachment point stays exactly where the user drew it (and tracks the
+// shape on move/resize). The point is only clamped into the box; it is NOT
+// snapped to an edge, which previously made the endpoint jump.
 export function makeBinding(shape, px, py) {
     const { minX, minY, maxX, maxY } = shapeBounds(shape);
     const w = maxX - minX;
     const h = maxY - minY;
 
-    let cx = clamp(px, minX, maxX);
-    let cy = clamp(py, minY, maxY);
-
-    const dl = cx - minX, dr = maxX - cx, dt = cy - minY, db = maxY - cy;
-    const m = Math.min(dl, dr, dt, db);
-    if (m === dl) cx = minX;
-    else if (m === dr) cx = maxX;
-    else if (m === dt) cy = minY;
-    else cy = maxY;
+    const cx = clamp(px, minX, maxX);
+    const cy = clamp(py, minY, maxY);
 
     return {
         id: shape.id,
@@ -110,7 +106,11 @@ export class Connectors {
                 const shape = byId.get(el.startBinding.id);
                 if (this.isShape(shape)) {
                     const p = anchorPos(shape, el.startBinding);
-                    el.startX = p.x; el.startY = p.y; changed = true;
+                    // Only move (and reroute) when the shape actually shifted,
+                    // so a freshly drawn line keeps its shape.
+                    if (p.x !== el.startX || p.y !== el.startY) {
+                        el.startX = p.x; el.startY = p.y; changed = true;
+                    }
                 } else {
                     el.startBinding = null;
                 }
@@ -120,7 +120,9 @@ export class Connectors {
                 const shape = byId.get(el.endBinding.id);
                 if (this.isShape(shape)) {
                     const p = anchorPos(shape, el.endBinding);
-                    el.endX = p.x; el.endY = p.y; changed = true;
+                    if (p.x !== el.endX || p.y !== el.endY) {
+                        el.endX = p.x; el.endY = p.y; changed = true;
+                    }
                 } else {
                     el.endBinding = null;
                 }
