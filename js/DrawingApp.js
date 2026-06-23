@@ -230,7 +230,10 @@ export class DrawingApp {
         const x = (e.clientX - rect.left - this.offsetX) / this.zoom;
         const y = (e.clientY - rect.top - this.offsetY) / this.zoom;
         
-        if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+        // Middle-mouse always pans. Shift+drag pans too, except with the
+        // Select tool where Shift/Ctrl/Cmd are selection modifiers.
+        const shiftPan = e.button === 0 && e.shiftKey && this.currentTool !== 'select';
+        if (e.button === 1 || shiftPan) {
             this.isPanning = true;
             this.panStart = { x: e.clientX, y: e.clientY };
             this.mainCanvas.style.cursor = 'move';

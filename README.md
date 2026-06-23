@@ -63,7 +63,8 @@ Visit [asciilogic.com](https://asciilogic.com) to start creating diagrams instan
 - `Ctrl+Y` - Redo
 - `Ctrl+S` - Save
 - `Delete` - Delete selected
-- `Shift+Drag` - Pan canvas
+- `Shift`/`Ctrl`/`Cmd` + Click - Add/remove element from selection (Select tool)
+- `Shift+Drag` - Pan canvas (or middle-mouse drag)
 
 ## 🎨 New Features
 

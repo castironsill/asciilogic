@@ -8,10 +8,15 @@ export class SelectTool {
         this.originalElements = null;
         this.isSelecting = false;
         this.selectionBox = null;
+        this.additiveSelection = false;
+        this.baseSelection = [];
     }
     
     handleMouseDown(x, y, e) {
-        const handle = this.app.getHandleAt(x, y);
+        // With a selection modifier held, never grab a resize handle —
+        // the click is meant to add/remove from the selection.
+        const modifier = e && (e.shiftKey || e.ctrlKey || e.metaKey);
+        const handle = modifier ? null : this.app.getHandleAt(x, y);
         if (handle) {
             this.isDragging = true;
             this.dragHandle = handle.type;
@@ -20,18 +25,25 @@ export class SelectTool {
             this.updateCursor(handle.type);
         } else {
             const clickedElement = this.app.getElementAt(x, y);
-            
-            const isClickingSelected = this.app.selectedElements.length > 0 ? 
-                this.app.selectedElements.includes(clickedElement) : 
+            const additive = e && (e.shiftKey || e.ctrlKey || e.metaKey);
+
+            // Shift/Ctrl/Cmd + click toggles an element in/out of the selection.
+            if (additive && clickedElement) {
+                this.toggleInSelection(clickedElement);
+                return;
+            }
+
+            const isClickingSelected = this.app.selectedElements.length > 0 ?
+                this.app.selectedElements.includes(clickedElement) :
                 clickedElement === this.app.selectedElement;
-                
+
             if (isClickingSelected && clickedElement) {
                 this.isDragging = true;
                 this.dragHandle = 'move';
                 this.dragStart = { x, y };
-                
+
                 if (this.app.selectedElements.length > 0) {
-                    this.originalElements = this.app.selectedElements.map(el => 
+                    this.originalElements = this.app.selectedElements.map(el =>
                         JSON.parse(JSON.stringify(el))
                     );
                 } else {
@@ -42,30 +54,62 @@ export class SelectTool {
                 this.app.selectElement(x, y);
                 this.app.selectedElements = [];
             } else {
+                // Empty click: start a rubber-band box. With a modifier held,
+                // add to the existing selection instead of replacing it.
                 this.isSelecting = true;
+                this.additiveSelection = additive;
+                this.baseSelection = additive ? this.currentSelectionList() : [];
                 this.selectionBox = {
                     startX: x,
                     startY: y,
                     endX: x,
                     endY: y
                 };
-                this.app.selectedElement = null;
-                this.app.selectedElements = [];
+                if (!additive) {
+                    this.app.selectedElement = null;
+                    this.app.selectedElements = [];
+                }
             }
         }
+    }
+
+    // The current selection as a flat array (handles single or multi).
+    currentSelectionList() {
+        if (this.app.selectedElements.length > 0) return [...this.app.selectedElements];
+        return this.app.selectedElement ? [this.app.selectedElement] : [];
+    }
+
+    // Add the element if absent, remove it if already selected.
+    toggleInSelection(el) {
+        const sel = this.currentSelectionList();
+        const idx = sel.indexOf(el);
+        if (idx >= 0) sel.splice(idx, 1);
+        else sel.push(el);
+        this.app.selectedElement = null;
+        this.app.selectedElements = sel;
+        this.app.render();
     }
     
     handleMouseMove(x, y, e) {
         if (this.isSelecting) {
             this.selectionBox.endX = x;
             this.selectionBox.endY = y;
-            
+
             const box = this.app.getNormalizedBox(this.selectionBox);
-            this.app.selectedElements = this.app.elements.filter(el => 
+            const inBox = this.app.elements.filter(el =>
                 this.app.isElementInBox(el, box)
             );
+
+            if (this.additiveSelection) {
+                // Union the box contents with the pre-drag selection.
+                const merged = [...this.baseSelection];
+                inBox.forEach(el => { if (!merged.includes(el)) merged.push(el); });
+                this.app.selectedElements = merged;
+            } else {
+                this.app.selectedElements = inBox;
+            }
             this.app.selectedElement = null;
-            
+
             this.app.render();
             return;
         }
@@ -146,6 +190,8 @@ export class SelectTool {
         if (this.isSelecting) {
             this.isSelecting = false;
             this.selectionBox = null;
+            this.additiveSelection = false;
+            this.baseSelection = [];
             this.app.render();
             return;
         }
