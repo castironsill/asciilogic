@@ -11,7 +11,7 @@ A powerful browser-based ASCII diagram tool for creating logic diagrams, flowcha
   - ➡️ Directional arrows with line styles
   - ⬜ Boxes with fills (solid colors, hatching patterns)
   - ⭕ Circles and ellipses with the same fill/pattern/color options
-  - 📝 Text with adjustable font sizes
+  - 📝 Multi-line text with adjustable font sizes (Shift+Enter for a new line)
   - 🎨 Color picker for all elements (8 color options)
 
 - **Smart Editing**

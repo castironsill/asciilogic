@@ -244,7 +244,10 @@ export class Renderer {
         const fontSize = element.fontSize || 16;
         ctx.font = `${fontSize}px monospace`;
         ctx.textBaseline = 'middle';
-        ctx.fillText(element.text, element.x, element.y);
+        const lineHeight = fontSize * 1.2;
+        String(element.text).split('\n').forEach((line, i) => {
+            ctx.fillText(line, element.x, element.y + i * lineHeight);
+        });
     }
     
     getContentBounds() {

@@ -55,6 +55,28 @@ export function getElementsBounds(elements, ctx = null) {
     return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
 }
 
+// Measure a (possibly multi-line) text element. Uses ctx for accurate
+// width when available, otherwise estimates from character count.
+export function getTextDimensions(element, ctx = null) {
+    const fontSize = element.fontSize || 16;
+    const lineHeight = fontSize * 1.2;
+    const lines = String(element.text ?? '').split('\n');
+
+    let width = 0;
+    if (ctx) {
+        ctx.save();
+        ctx.font = `${fontSize}px monospace`;
+        for (const line of lines) width = Math.max(width, ctx.measureText(line).width);
+        ctx.restore();
+    } else {
+        let maxLen = 0;
+        for (const line of lines) maxLen = Math.max(maxLen, line.length);
+        width = maxLen * fontSize * 0.6;
+    }
+
+    return { fontSize, lineHeight, lines, lineCount: lines.length, width, height: lines.length * lineHeight };
+}
+
 export function getNormalizedBox(box) {
     return {
         minX: Math.min(box.startX, box.endX),
@@ -68,16 +90,13 @@ export function isPointNearElement(x, y, element, ctx, fontSize = 16) {
     const threshold = 5;
     
     if (element.type === 'text') {
-        ctx.save();
-        const elementFontSize = element.fontSize || fontSize;
-        ctx.font = `${elementFontSize}px monospace`;
-        const textWidth = ctx.measureText(element.text).width;
-        ctx.restore();
-        
-        return x >= element.x - threshold && 
-               x <= element.x + textWidth + threshold &&
-               y >= element.y - elementFontSize - 4 && 
-               y <= element.y + 10;
+        const { fontSize: fs, width, lineHeight, lineCount } = getTextDimensions(element, ctx);
+        const bottom = element.y + (lineCount - 1) * lineHeight + 10;
+
+        return x >= element.x - threshold &&
+               x <= element.x + width + threshold &&
+               y >= element.y - fs - 4 &&
+               y <= bottom;
     } else if (element.type === 'box') {
         const minX = Math.min(element.startX, element.endX);
         const maxX = Math.max(element.startX, element.endX);

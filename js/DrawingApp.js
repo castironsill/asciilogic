@@ -14,7 +14,7 @@ import { ControlsManager } from './ui/controls.js';
 import { LineStyleManager } from './utils/lineStyles.js';
 import { BoxStyleManager } from './utils/boxStyles.js';
 import { notifications } from './ui/notifications.js';
-import { getElementsBounds } from './utils/geometry.js';
+import { getElementsBounds, getTextDimensions } from './utils/geometry.js';
 
 export class DrawingApp {
     constructor() {
@@ -164,12 +164,17 @@ export class DrawingApp {
         // Text input
         this.textInput = document.getElementById('text-input');
         this.textInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                // Enter commits; Shift+Enter inserts a newline (default).
+                e.preventDefault();
                 this.finishTextInput();
             } else if (e.key === 'Escape') {
+                e.preventDefault();
                 this.cancelTextInput();
             }
         });
+        // Grow the textarea to fit its content as the user types.
+        this.textInput.addEventListener('input', () => this.autoSizeTextInput());
         this.textInput.addEventListener('blur', () => {
             if (this.textInput.style.display === 'block') {
                 this.finishTextInput();
@@ -515,37 +520,51 @@ export class DrawingApp {
         this.textInput.style.display = 'block';
         this.textInput.style.left = clickX + 'px';
         this.textInput.style.top = (clickY - 10) + 'px';
+        this.textInput.style.fontSize = (element.fontSize || this.fontSize) + 'px';
         this.textInput.value = element.text;
-        
+
         this.textInput.style.visibility = 'visible';
         this.textInput.style.opacity = '1';
-        
+
         this.editingElement = element;
-        
+        this.autoSizeTextInput();
+
         setTimeout(() => {
             this.textInput.focus();
             this.textInput.select();
         }, 10);
     }
-    
+
     startTextInput(clickX, clickY, canvasX, canvasY) {
         const snappedX = this.grid.snapToGrid(canvasX);
         const snappedY = this.grid.snapToGrid(canvasY);
-        
+
         this.textInput.style.display = 'block';
         this.textInput.style.left = clickX + 'px';
         this.textInput.style.top = (clickY - 10) + 'px';
+        this.textInput.style.fontSize = this.fontSize + 'px';
         this.textInput.value = '';
-        
+
         this.textInput.style.visibility = 'visible';
         this.textInput.style.opacity = '1';
-        
+        this.autoSizeTextInput();
+
         setTimeout(() => {
             this.textInput.focus();
             this.textInput.select();
         }, 10);
-        
+
         this.textPosition = { x: snappedX, y: snappedY };
+    }
+
+    // Grow the text entry box to fit its content (width + height) so
+    // multi-line input stays fully visible.
+    autoSizeTextInput() {
+        const ta = this.textInput;
+        ta.style.height = 'auto';
+        ta.style.height = ta.scrollHeight + 'px';
+        ta.style.width = 'auto';
+        ta.style.width = Math.max(150, ta.scrollWidth + 4) + 'px';
     }
     
     finishTextInput() {
@@ -645,14 +664,12 @@ export class DrawingApp {
                     ctx.restore();
                 } else if (el.type === 'text') {
                     ctx.setLineDash([5, 5]);
-                    const fontSize = el.fontSize || 16;
-                    ctx.font = `${fontSize}px monospace`;
-                    const textWidth = ctx.measureText(el.text).width;
+                    const { fontSize, width, lineHeight, lineCount } = getTextDimensions(el, ctx);
                     ctx.strokeRect(
-                        el.x - 5, 
-                        el.y - fontSize - 4, 
-                        textWidth + 10, 
-                        fontSize + 14
+                        el.x - 5,
+                        el.y - fontSize - 4,
+                        width + 10,
+                        fontSize + 14 + (lineCount - 1) * lineHeight
                     );
                     ctx.setLineDash([]);
                 }
@@ -698,14 +715,12 @@ export class DrawingApp {
                 }
             } else if (this.selectedElement.type === 'text') {
                 ctx.setLineDash([5, 5]);
-                const fontSize = this.selectedElement.fontSize || 16;
-                ctx.font = `${fontSize}px monospace`;
-                const textWidth = ctx.measureText(this.selectedElement.text).width;
+                const { fontSize, width, lineHeight, lineCount } = getTextDimensions(this.selectedElement, ctx);
                 ctx.strokeRect(
-                    this.selectedElement.x - 5, 
-                    this.selectedElement.y - fontSize - 4, 
-                    textWidth + 10, 
-                    fontSize + 14
+                    this.selectedElement.x - 5,
+                    this.selectedElement.y - fontSize - 4,
+                    width + 10,
+                    fontSize + 14 + (lineCount - 1) * lineHeight
                 );
             }
             

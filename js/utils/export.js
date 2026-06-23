@@ -68,17 +68,28 @@ export class ExportManager {
         // Use a default grid size if current is 0
         const gridSize = this.app.gridSize || 10;
         
+        // ASCII characters are typically 2:1 (height:width)
+        // So we need to scale X by 2 relative to Y for proper aspect ratio
+        const scaleX = 1.0; // Horizontal spacing between characters
+        const scaleY = 2.4; // Vertical spacing between lines
+        // One ASCII row spans this many canvas pixels; text lines are placed
+        // one row apart so they never collide in the coarser ASCII grid.
+        const rowHeight = gridSize * scaleY;
+
         // Find bounds
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        
+
         this.app.elements.forEach(el => {
             if (el.type === 'text') {
                 const fontSize = el.fontSize || 16;
                 const charWidth = fontSize * 0.6;
+                const lines = String(el.text).split('\n');
+                let maxLen = 0;
+                lines.forEach(l => { maxLen = Math.max(maxLen, l.length); });
                 minX = Math.min(minX, el.x);
                 minY = Math.min(minY, el.y - fontSize);
-                maxX = Math.max(maxX, el.x + el.text.length * charWidth);
-                maxY = Math.max(maxY, el.y);
+                maxX = Math.max(maxX, el.x + maxLen * charWidth);
+                maxY = Math.max(maxY, el.y + (lines.length - 1) * rowHeight);
             } else if (el.type === 'box') {
                 minX = Math.min(minX, el.startX, el.endX);
                 minY = Math.min(minY, el.startY, el.endY);
@@ -105,13 +116,7 @@ export class ExportManager {
         minY -= padding;
         maxX += padding;
         maxY += padding;
-        
-        // ASCII characters are typically 2:1 (height:width)
-        // So we need to scale X by 2 relative to Y for proper aspect ratio
-        const charAspectRatio = 2.0; // Typical monospace char is twice as tall as wide
-        const scaleX = 1.0; // Horizontal spacing between characters (reduced from 1.2)
-        const scaleY = 2.4; // Vertical spacing between lines (increased from 1.8)
-        
+
         // Calculate grid size with aspect ratio correction
         const width = Math.ceil((maxX - minX) / (gridSize * scaleX));
         const height = Math.ceil((maxY - minY) / (gridSize * scaleY));
@@ -299,13 +304,18 @@ export class ExportManager {
 
     drawTextToGrid(grid, text, toGridX, toGridY) {
         const x = toGridX(text.x);
-        const y = toGridY(text.y);
-        
-        for (let i = 0; i < text.text.length; i++) {
-            if (this.isValidCell(grid, y, x + i)) {
-                grid[y][x + i] = text.text[i];
+        const y0 = toGridY(text.y);
+
+        // Each line goes on its own consecutive row; the ASCII grid is too
+        // coarse to honor sub-row pixel line spacing.
+        String(text.text).split('\n').forEach((line, li) => {
+            const y = y0 + li;
+            for (let i = 0; i < line.length; i++) {
+                if (this.isValidCell(grid, y, x + i)) {
+                    grid[y][x + i] = line[i];
+                }
             }
-        }
+        });
     }
     
     drawArrowHeads(grid, arrow, toGridX, toGridY) {
@@ -532,14 +542,17 @@ export class ExportManager {
                 svg += `\n    <ellipse cx="${ecx}" cy="${ecy}" rx="${rx}" ry="${ry}" stroke="${color}" stroke-width="2" ${fillAttr}${transform}/>`;
             } else if (el.type === 'text') {
                 const fontSize = el.fontSize || 16;
-                // Escape special characters in text
-                const escapedText = el.text
+                const lineHeight = fontSize * 1.2;
+                const escape = (s) => s
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#039;');
-                svg += `\n    <text x="${el.x}" y="${el.y}" font-family="monospace" font-size="${fontSize}" fill="${color}"${transform}>${escapedText}</text>`;
+                const tspans = String(el.text).split('\n')
+                    .map((line, i) => `<tspan x="${el.x}" dy="${i === 0 ? 0 : lineHeight}">${escape(line)}</tspan>`)
+                    .join('');
+                svg += `\n    <text x="${el.x}" y="${el.y}" font-family="monospace" font-size="${fontSize}" fill="${color}"${transform}>${tspans}</text>`;
             }
         });
         
@@ -610,7 +623,9 @@ export class ExportManager {
         let maxY = -Infinity;
         this.app.elements.forEach(el => {
             if (el.type === 'text') {
-                maxY = Math.max(maxY, el.y);
+                const lineHeight = (el.fontSize || 16) * 1.2;
+                const lineCount = String(el.text).split('\n').length;
+                maxY = Math.max(maxY, el.y + (lineCount - 1) * lineHeight);
             } else if (el.type === 'box') {
                 maxY = Math.max(maxY, el.startY, el.endY);
             } else {
@@ -698,14 +713,18 @@ export class ExportManager {
             } else if (el.type === 'ellipse') {
                 dxf += this.dxfEllipse(el, scale, flipY, colorIndex);
             } else if (el.type === 'text') {
-                // Export text with flipped Y
-                dxf += this.dxfText(
-                    el.x * scale, 
-                    flipY(el.y), 
-                    el.text, 
-                    (el.fontSize || 16) * scale,
-                    colorIndex
-                );
+                // Export each line as its own TEXT entity (DXF TEXT is single-line)
+                const fontSize = el.fontSize || 16;
+                const lineHeight = fontSize * 1.2;
+                String(el.text).split('\n').forEach((line, i) => {
+                    dxf += this.dxfText(
+                        el.x * scale,
+                        flipY(el.y + i * lineHeight),
+                        line,
+                        fontSize * scale,
+                        colorIndex
+                    );
+                });
             }
         });
         

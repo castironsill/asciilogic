@@ -293,6 +293,11 @@ textarea {
     z-index: 9999;
     min-width: 150px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    /* multi-line text entry */
+    white-space: pre;
+    overflow: hidden;
+    resize: none;
+    line-height: 1.2;
 }
 
 /* Help Content Styles */
