@@ -5,6 +5,7 @@ import { Grid } from './utils/grid.js';
 import { ExportManager } from './utils/export.js';
 import { AsciiImporter } from './utils/asciiImport.js';
 import { Clipboard } from './core/clipboard.js';
+import { Selection } from './core/selection.js';
 import { History } from './core/history.js';
 import { Storage } from './core/storage.js';
 import { Renderer } from './core/render.js';
@@ -13,7 +14,7 @@ import { ControlsManager } from './ui/controls.js';
 import { LineStyleManager } from './utils/lineStyles.js';
 import { BoxStyleManager } from './utils/boxStyles.js';
 import { notifications } from './ui/notifications.js';
-import { isPointNearElement, isElementInBox, getNormalizedBox, distanceToLineSegment, getElementsBounds } from './utils/geometry.js';
+import { getElementsBounds } from './utils/geometry.js';
 
 export class DrawingApp {
     constructor() {
@@ -111,6 +112,7 @@ export class DrawingApp {
         this.exportManager = new ExportManager(this);
         this.asciiImporter = new AsciiImporter(this);
         this.clipboardManager = new Clipboard(this);
+        this.selection = new Selection(this);
         this.history = new History(this);
         this.storage = new Storage(this);
         this.renderer = new Renderer(this);
@@ -454,78 +456,31 @@ export class DrawingApp {
         notifications.show('Canvas cleared');
     }
     
+    // Selection / hit-testing is delegated to the Selection module.
     selectElement(x, y) {
-        this.selectedElement = null;
-        
-        for (let i = this.elements.length - 1; i >= 0; i--) {
-            const el = this.elements[i];
-            if (isPointNearElement(x, y, el, this.ctx, this.fontSize)) {
-                this.selectedElement = el;
-                break;
-            }
-        }
-        
-        this.render();
+        this.selection.selectElement(x, y);
     }
-    
+
     getElementAt(x, y) {
-        for (let i = this.elements.length - 1; i >= 0; i--) {
-            const el = this.elements[i];
-            if (isPointNearElement(x, y, el, this.ctx, this.fontSize)) {
-                return el;
-            }
-        }
-        return null;
+        return this.selection.getElementAt(x, y);
     }
-    
+
     getHandleAt(x, y) {
-        if (!this.selectedElement || this.selectedElement.type === 'text') return null;
-        
-        const threshold = 8 / this.zoom;
-        
-        if (this.selectedElement.type === 'line' || this.selectedElement.type === 'arrow') {
-            if (Math.abs(x - this.selectedElement.startX) < threshold && 
-                Math.abs(y - this.selectedElement.startY) < threshold) {
-                return { type: 'start' };
-            }
-            
-            if (Math.abs(x - this.selectedElement.endX) < threshold && 
-                Math.abs(y - this.selectedElement.endY) < threshold) {
-                return { type: 'end' };
-            }
-            
-            if (this.selectedElement.bendX !== undefined) {
-                if (Math.abs(x - this.selectedElement.bendX) < threshold && 
-                    Math.abs(y - this.selectedElement.bendY) < threshold) {
-                    return { type: 'bend' };
-                }
-            }
-        }
-        
-        return null;
+        return this.selection.getHandleAt(x, y);
     }
-    
+
     getNormalizedBox(box) {
-        return getNormalizedBox(box);
+        return this.selection.getNormalizedBox(box);
     }
-    
+
     isElementInBox(element, box) {
-        return isElementInBox(element, box);
+        return this.selection.isElementInBox(element, box);
     }
-    
+
     recalculateBend(element) {
-        const dx = Math.abs(element.endX - element.startX);
-        const dy = Math.abs(element.endY - element.startY);
-        
-        if (dx > dy) {
-            element.bendX = element.endX;
-            element.bendY = element.startY;
-        } else {
-            element.bendX = element.startX;
-            element.bendY = element.endY;
-        }
+        this.selection.recalculateBend(element);
     }
-    
+
     deleteSelected() {
         if (this.selectedElements.length > 0) {
             this.selectedElements.forEach(el => {
