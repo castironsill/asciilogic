@@ -3,32 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="asciilogic - Free online ASCII diagram tool for creating logic diagrams, flowcharts, elevator schematics, and control system diagrams. Export to ASCII art or import existing diagrams.">
-    <meta name="keywords" content="ascii diagram, ascii art, logic diagram, flowchart, ascii generator, text diagram, elevator diagram, control logic, ascii drawing tool, online diagram editor">
+    <meta name="description" content="Free in-browser tool for sketching ASCII diagrams — boxes, circles, lines, arrows, and text. Connectors snap to shapes; export to ASCII, Unicode, PNG, SVG, or DXF. No sign-up.">
+    <meta name="keywords" content="ascii diagram, ascii art, ascii flowchart, ascii diagram generator, text diagram, ascii drawing tool, online diagram editor, unicode box drawing">
     <meta name="author" content="asciilogic">
-    <title>asciilogic - ASCII Diagram Tool for Logic & Control Systems</title>
-    
+    <title>asciilogic — Free Online ASCII Diagram Tool</title>
+    <link rel="canonical" href="https://asciilogic.com/">
+    <meta name="theme-color" content="#1a1a1a">
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
-    
-    <!-- Logo for social media sharing -->
-    <meta property="og:image" content="logo.png">
-    <meta property="og:title" content="asciilogic - ASCII Diagram Tool">
-    <meta property="og:description" content="Create ASCII diagrams for logic systems, flowcharts, and technical documentation">
-    <meta property="og:url" content="https://asciilogic.com">
+
+    <!-- Open Graph / social sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="asciilogic">
+    <meta property="og:title" content="asciilogic — Free Online ASCII Diagram Tool">
+    <meta property="og:description" content="Sketch ASCII diagrams in your browser — shapes, connectors, and text. Export to ASCII, Unicode, PNG, SVG, or DXF.">
+    <meta property="og:url" content="https://asciilogic.com/">
+    <meta property="og:image" content="https://asciilogic.com/logo.png">
+    <meta property="og:image:alt" content="asciilogic logo">
     <meta name="twitter:card" content="summary_large_image">
-    
+    <meta name="twitter:title" content="asciilogic — Free Online ASCII Diagram Tool">
+    <meta name="twitter:description" content="Sketch ASCII diagrams in your browser — shapes, connectors, and text. Export to ASCII, Unicode, PNG, SVG, or DXF.">
+    <meta name="twitter:image" content="https://asciilogic.com/logo.png">
+
     <!-- Structured Data for SEO -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "asciilogic",
-      "url": "https://asciilogic.com",
-      "description": "Free online ASCII diagram tool for creating logic diagrams, flowcharts, and technical documentation",
-      "applicationCategory": "DeveloperApplication",
+      "url": "https://asciilogic.com/",
+      "description": "Free in-browser tool for sketching ASCII diagrams with shapes, connectors, and text, and exporting them to ASCII, Unicode, PNG, SVG, or DXF.",
+      "applicationCategory": "DesignApplication",
       "operatingSystem": "Any",
+      "browserRequirements": "Requires a modern browser with HTML5 Canvas",
+      "image": "https://asciilogic.com/logo.png",
+      "featureList": [
+        "Boxes, circles, lines, arrows, polylines, and text",
+        "Connectors that stay attached to shapes",
+        "Not-to-scale dimension lines",
+        "Export to ASCII, Unicode, PNG, SVG, and DXF",
+        "Import existing ASCII art"
+      ],
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -40,7 +57,7 @@
       }
     }
     </script>
-    
+
     <link rel="stylesheet" href="css/style.css">
     <style>
         .line-style-controls, .box-style-controls {
@@ -290,7 +307,7 @@
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <img src="logo.png" alt="asciilogic logo" style="height: 96px; width: auto;">
-                    <h1>Welcome to asciilogic</h1>
+                    <h2 style="margin: 0; color: var(--text-primary); font-size: 24px;">Welcome to asciilogic</h2>
                 </div>
                 <button class="modal-close" id="close-help">&times;</button>
             </div>
