@@ -5,15 +5,17 @@ export class LineTool {
         this.app = app;
         this.isDrawing = false;
         this.tempElement = null;
+        // Subclasses (ArrowTool, BoxTool) override the element type they create.
+        this.elementType = 'line';
     }
-    
+
     handleMouseDown(x, y, e) {
         this.isDrawing = true;
         const snappedX = this.app.grid.snapToGrid(x);
         const snappedY = this.app.grid.snapToGrid(y);
-        
+
         this.tempElement = {
-            type: 'line',
+            type: this.elementType,
             startX: snappedX,
             startY: snappedY,
             endX: snappedX,
@@ -87,17 +89,24 @@ export class LineTool {
                 delete this.tempElement.firstSegmentEnd;
             }
             
-            if (this.tempElement.startX !== this.tempElement.endX || 
+            if (this.tempElement.startX !== this.tempElement.endX ||
                 this.tempElement.startY !== this.tempElement.endY) {
+                this.finalizeElement(this.tempElement);
                 this.app.addElement(this.tempElement);
             }
-            
+
             this.tempElement = null;
             this.app.tempElement = null;
             this.app.render();
         }
     }
-    
+
+    // Stamp style onto the element just before it's committed.
+    // Overridden by BoxTool to apply fill/pattern instead.
+    finalizeElement(element) {
+        element.lineStyle = this.app.lineStyleManager.getLineStyle();
+    }
+
     getCursor() {
         return 'crosshair';
     }

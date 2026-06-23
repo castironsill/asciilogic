@@ -1,6 +1,6 @@
 // js/DrawingApp.js - Main application class
 
-import { SelectTool, LineTool, TextTool } from './tools/index.js';
+import { SelectTool, LineTool, TextTool, ArrowTool, BoxTool } from './tools/index.js';
 import { Grid } from './utils/grid.js';
 import { ExportManager } from './utils/export.js';
 import { AsciiImporter } from './utils/asciiImport.js';
@@ -126,79 +126,8 @@ export class DrawingApp {
             select: new SelectTool(this),
             line: new LineTool(this),
             text: new TextTool(this),
-            arrow: new LineTool(this), // Arrow uses LineTool logic
-            box: new LineTool(this)    // Box will use LineTool logic for now
-        };
-        
-        // Modify arrow tool behavior
-        this.tools.arrow.tempElementType = 'arrow';
-        
-        // Modify box tool behavior  
-        const boxTool = this.tools.box;
-        boxTool.handleMouseMove = function(x, y, e) {
-            if (this.isDrawing && this.tempElement) {
-                const snappedX = this.app.grid.snapToGrid(x);
-                const snappedY = this.app.grid.snapToGrid(y);
-                
-                this.tempElement.type = 'box';
-                this.tempElement.endX = snappedX;
-                this.tempElement.endY = snappedY;
-                delete this.tempElement.bendX;
-                delete this.tempElement.bendY;
-                
-                // Apply box style to temp element
-                const boxStyle = this.app.boxStyleManager.getBoxStyle();
-                this.tempElement.fill = boxStyle.fill;
-                this.tempElement.pattern = boxStyle.pattern;
-                this.tempElement.color = boxStyle.color;
-                
-                this.app.tempElement = this.tempElement;
-                this.app.render();
-            }
-        };
-        
-        // Override box tool's mouse up to ensure styles are saved
-        const originalBoxMouseUp = boxTool.handleMouseUp.bind(boxTool);
-        boxTool.handleMouseUp = function(x, y, e) {
-            // Apply box style before finalizing
-            if (this.tempElement && this.tempElement.type === 'box') {
-                const boxStyle = this.app.boxStyleManager.getBoxStyle();
-                this.tempElement.fill = boxStyle.fill;
-                this.tempElement.pattern = boxStyle.pattern;
-                this.tempElement.color = boxStyle.color;
-            }
-            originalBoxMouseUp(x, y, e);
-        };
-        
-        // Modify arrow creation
-        const arrowTool = this.tools.arrow;
-        const originalMouseDown = arrowTool.handleMouseDown.bind(arrowTool);
-        arrowTool.handleMouseDown = function(x, y, e) {
-            originalMouseDown(x, y, e);
-            if (this.tempElement) {
-                this.tempElement.type = 'arrow';
-            }
-        };
-        
-        // Modify line/arrow tool to include line style
-        const originalLineTool = this.tools.line;
-        const originalLineMouseUp = originalLineTool.handleMouseUp.bind(originalLineTool);
-        originalLineTool.handleMouseUp = function(x, y, e) {
-            // Add line style to temp element before finalizing
-            if (this.tempElement) {
-                this.tempElement.lineStyle = this.app.lineStyleManager.getLineStyle();
-            }
-            originalLineMouseUp(x, y, e);
-        };
-        
-        // Same for arrow tool
-        const originalArrowMouseUp = arrowTool.handleMouseUp.bind(arrowTool);
-        arrowTool.handleMouseUp = function(x, y, e) {
-            // Add line style to temp element before finalizing
-            if (this.tempElement) {
-                this.tempElement.lineStyle = this.app.lineStyleManager.getLineStyle();
-            }
-            originalArrowMouseUp(x, y, e);
+            arrow: new ArrowTool(this),
+            box: new BoxTool(this)
         };
     }
     
