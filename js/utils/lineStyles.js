@@ -4,8 +4,8 @@ export class LineStyleManager {
     constructor(app) {
         this.app = app;
         this.currentStyle = 'solid';
-        // When a line/arrow is selected, edits apply to it.
-        this.editingElement = null;
+        // When one or more lines/arrows are selected, edits apply to all.
+        this.editingElements = [];
         this.setupEventListeners();
     }
 
@@ -23,8 +23,8 @@ export class LineStyleManager {
     setLineStyle(style) {
         this.setActiveButton(style);
 
-        if (this.editingElement) {
-            this.editingElement.lineStyle = style;
+        if (this.editingElements.length) {
+            this.editingElements.forEach(el => { el.lineStyle = style; });
             this.app.history.saveState();
             this.app.render();
         } else {
@@ -39,16 +39,18 @@ export class LineStyleManager {
     }
 
     // Show/populate the line controls based on the current selection and tool.
-    syncControls(selected, tool) {
+    // `selectedList` is the array of selected elements.
+    syncControls(selectedList, tool) {
         const controls = document.getElementById('line-style-controls');
         if (!controls) return;
 
-        const editing = selected && (selected.type === 'line' || selected.type === 'arrow');
+        const lines = selectedList.filter(el => el.type === 'line' || el.type === 'arrow');
+        const editing = lines.length > 0;
         const drawing = (tool === 'line' || tool === 'arrow');
         controls.style.display = (editing || drawing) ? 'flex' : 'none';
-        this.editingElement = editing ? selected : null;
+        this.editingElements = editing ? lines : [];
 
-        this.setActiveButton(editing ? (selected.lineStyle || 'solid') : this.currentStyle);
+        this.setActiveButton(editing ? (lines[0].lineStyle || 'solid') : this.currentStyle);
     }
 
     getLineStyle() {

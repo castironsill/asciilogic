@@ -8,9 +8,9 @@ export class BoxStyleManager {
         this.currentFill = 'none';
         this.currentPattern = 'none';
         this.currentColor = '#ffffff';
-        // When a box/ellipse is selected, edits apply to it instead of
-        // just setting the defaults for new shapes.
-        this.editingElement = null;
+        // When one or more box/ellipse shapes are selected, edits apply to
+        // all of them instead of just setting the defaults for new shapes.
+        this.editingElements = [];
         
         // Define available patterns
         this.patterns = {
@@ -63,12 +63,18 @@ export class BoxStyleManager {
     setFill(fill) {
         this.updatePatternVisibility(fill);
 
-        if (this.editingElement) {
-            this.editingElement.fill = fill;
-            if (fill === 'pattern' && (!this.editingElement.pattern || this.editingElement.pattern === 'none')) {
-                this.editingElement.pattern = 'diagonal';
+        if (this.editingElements.length) {
+            this.editingElements.forEach(el => {
+                el.fill = fill;
+                if (fill === 'pattern' && (!el.pattern || el.pattern === 'none')) {
+                    el.pattern = 'diagonal';
+                }
+            });
+            if (fill === 'pattern') {
                 const patternSelect = document.getElementById('box-pattern-select');
-                if (patternSelect) patternSelect.value = 'diagonal';
+                if (patternSelect && (patternSelect.value === 'none' || !patternSelect.value)) {
+                    patternSelect.value = 'diagonal';
+                }
             }
             this.commitEdit();
         } else {
@@ -82,8 +88,8 @@ export class BoxStyleManager {
     }
 
     setPattern(pattern) {
-        if (this.editingElement) {
-            this.editingElement.pattern = pattern;
+        if (this.editingElements.length) {
+            this.editingElements.forEach(el => { el.pattern = pattern; });
             this.commitEdit();
         } else {
             this.currentPattern = pattern;
@@ -92,8 +98,8 @@ export class BoxStyleManager {
 
     setColor(color) {
         const hex = resolveColor(color);
-        if (this.editingElement) {
-            this.editingElement.color = hex;
+        if (this.editingElements.length) {
+            this.editingElements.forEach(el => { el.color = hex; });
             this.commitEdit();
         } else {
             this.currentColor = hex;
@@ -114,28 +120,33 @@ export class BoxStyleManager {
     }
 
     // Show/populate the box controls based on the current selection and tool.
-    // Called by DrawingApp.refreshStyleControls().
-    syncControls(selected, tool) {
+    // `selectedList` is the array of selected elements (1 for a single
+    // click, many for a rubber-band selection). Called by
+    // DrawingApp.refreshStyleControls().
+    syncControls(selectedList, tool) {
         const controls = document.getElementById('box-style-controls');
         if (!controls) return;
 
-        const editing = selected && (selected.type === 'box' || selected.type === 'ellipse');
+        const shapes = selectedList.filter(el => el.type === 'box' || el.type === 'ellipse');
+        const editing = shapes.length > 0;
         const drawing = (tool === 'box' || tool === 'ellipse');
         controls.style.display = (editing || drawing) ? 'flex' : 'none';
-        this.editingElement = editing ? selected : null;
+        this.editingElements = editing ? shapes : [];
 
         if (editing) {
-            const fill = selected.fill || 'none';
+            // Populate from the first selected shape as the representative.
+            const rep = shapes[0];
+            const fill = rep.fill || 'none';
             const fillSelect = document.getElementById('box-fill-select');
             if (fillSelect) fillSelect.value = fill;
             this.updatePatternVisibility(fill);
 
-            if (selected.pattern && selected.pattern !== 'none') {
+            if (rep.pattern && rep.pattern !== 'none') {
                 const patternSelect = document.getElementById('box-pattern-select');
-                if (patternSelect) patternSelect.value = selected.pattern;
+                if (patternSelect) patternSelect.value = rep.pattern;
             }
 
-            const colorName = nameFromHex(selected.color);
+            const colorName = nameFromHex(rep.color);
             const colorSelect = document.getElementById('box-color-select');
             if (colorName && colorSelect) colorSelect.value = colorName;
         } else {

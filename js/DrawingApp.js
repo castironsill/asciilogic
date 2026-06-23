@@ -645,10 +645,12 @@ export class DrawingApp {
     }
 
     // Show/populate the box and line style panels based on the active tool
-    // and current single-element selection.
+    // and the current selection (single click or rubber-band multi-select).
     refreshStyleControls() {
         if (!this.boxStyleManager || !this.lineStyleManager) return;
-        const selected = this.selectedElement; // single-selection editing
+        const selected = this.selectedElements.length > 0
+            ? this.selectedElements
+            : (this.selectedElement ? [this.selectedElement] : []);
         this.boxStyleManager.syncControls(selected, this.currentTool);
         this.lineStyleManager.syncControls(selected, this.currentTool);
     }
