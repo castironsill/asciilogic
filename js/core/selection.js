@@ -33,8 +33,9 @@ export class Selection {
         return null;
     }
 
-    // Return the drag handle (start/end/bend) of the selected line/arrow
-    // under (x, y), or null.
+    // Return the drag handle of the selected element under (x, y), or null.
+    // Lines/arrows: start/end/bend. Boxes/ellipses: 8 resize handles
+    // (nw, n, ne, e, se, s, sw, w).
     getHandleAt(x, y) {
         const sel = this.app.selectedElement;
         if (!sel || sel.type === 'text') return null;
@@ -53,9 +54,35 @@ export class Selection {
                     return { type: 'bend' };
                 }
             }
+        } else if (sel.type === 'box' || sel.type === 'ellipse') {
+            for (const h of this.boxHandles(sel)) {
+                if (Math.abs(x - h.x) < threshold && Math.abs(y - h.y) < threshold) {
+                    return { type: h.name };
+                }
+            }
         }
 
         return null;
+    }
+
+    // The 8 resize-handle positions of a box/ellipse, by compass name.
+    boxHandles(el) {
+        const minX = Math.min(el.startX, el.endX);
+        const maxX = Math.max(el.startX, el.endX);
+        const minY = Math.min(el.startY, el.endY);
+        const maxY = Math.max(el.startY, el.endY);
+        const midX = (minX + maxX) / 2;
+        const midY = (minY + maxY) / 2;
+        return [
+            { name: 'nw', x: minX, y: minY },
+            { name: 'n', x: midX, y: minY },
+            { name: 'ne', x: maxX, y: minY },
+            { name: 'e', x: maxX, y: midY },
+            { name: 'se', x: maxX, y: maxY },
+            { name: 's', x: midX, y: maxY },
+            { name: 'sw', x: minX, y: maxY },
+            { name: 'w', x: minX, y: midY }
+        ];
     }
 
     // Reposition a line's bend point to keep its right-angle after an

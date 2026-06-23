@@ -1,4 +1,6 @@
 export class SelectTool {
+    static RESIZE_HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+
     constructor(app) {
         this.app = app;
         this.isDragging = false;
@@ -168,8 +170,10 @@ export class SelectTool {
             } else if (this.dragHandle === 'bend') {
                 this.app.selectedElement.bendX = snappedX;
                 this.app.selectedElement.bendY = snappedY;
+            } else if (SelectTool.RESIZE_HANDLES.includes(this.dragHandle)) {
+                this.resizeBox(this.dragHandle, snappedX, snappedY);
             }
-            
+
             this.app.render();
             return;
         }
@@ -208,23 +212,38 @@ export class SelectTool {
         }
     }
     
+    // Resize a box/ellipse by dragging the named handle; the opposite
+    // edge(s) stay anchored. Works off the original (pre-drag) geometry.
+    resizeBox(handle, snappedX, snappedY) {
+        const o = this.originalElement;
+        const el = this.app.selectedElement;
+        if (!o || !el) return;
+
+        let minX = Math.min(o.startX, o.endX);
+        let maxX = Math.max(o.startX, o.endX);
+        let minY = Math.min(o.startY, o.endY);
+        let maxY = Math.max(o.startY, o.endY);
+
+        if (handle.includes('w')) minX = snappedX;
+        if (handle.includes('e')) maxX = snappedX;
+        if (handle.includes('n')) minY = snappedY;
+        if (handle.includes('s')) maxY = snappedY;
+
+        // Normalize so dragging an edge past the opposite one just flips it.
+        el.startX = Math.min(minX, maxX);
+        el.endX = Math.max(minX, maxX);
+        el.startY = Math.min(minY, maxY);
+        el.endY = Math.max(minY, maxY);
+    }
+
     updateCursor(handleType) {
-        if (!handleType) {
-            this.app.mainCanvas.style.cursor = 'default';
-            return;
-        }
-        
-        switch (handleType) {
-            case 'start':
-            case 'end':
-            case 'bend':
-                this.app.mainCanvas.style.cursor = 'pointer';
-                break;
-            case 'move':
-                this.app.mainCanvas.style.cursor = 'move';
-                break;
-            default:
-                this.app.mainCanvas.style.cursor = 'default';
-        }
+        const cursors = {
+            start: 'pointer', end: 'pointer', bend: 'pointer', move: 'move',
+            nw: 'nwse-resize', se: 'nwse-resize',
+            ne: 'nesw-resize', sw: 'nesw-resize',
+            n: 'ns-resize', s: 'ns-resize',
+            e: 'ew-resize', w: 'ew-resize'
+        };
+        this.app.mainCanvas.style.cursor = cursors[handleType] || 'default';
     }
 }

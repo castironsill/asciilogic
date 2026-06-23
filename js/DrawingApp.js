@@ -705,6 +705,16 @@ export class DrawingApp {
                 const minY = Math.min(this.selectedElement.startY, this.selectedElement.endY);
                 const maxY = Math.max(this.selectedElement.startY, this.selectedElement.endY);
                 ctx.strokeRect(minX - 5, minY - 5, maxX - minX + 10, maxY - minY + 10);
+
+                // Resize handles at corners and edge midpoints.
+                ctx.setLineDash([]);
+                const handleSize = 6;
+                const midX = (minX + maxX) / 2;
+                const midY = (minY + maxY) / 2;
+                [[minX, minY], [midX, minY], [maxX, minY], [maxX, midY],
+                 [maxX, maxY], [midX, maxY], [minX, maxY], [minX, midY]].forEach(([hx, hy]) => {
+                    ctx.fillRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
+                });
             } else if (this.selectedElement.type === 'line' || this.selectedElement.type === 'arrow') {
                 ctx.setLineDash([]);
                 const handleSize = 6;
