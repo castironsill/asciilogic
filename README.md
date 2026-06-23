@@ -143,6 +143,17 @@ With patterns and colors, you can create more expressive diagrams:
 
 5. Start developing! The page will auto-refresh on changes.
 
+### Testing
+
+The shipped site has **zero runtime dependencies**. Tests are dev-only and run
+on the pure logic modules (geometry, ASCII export/import) via [Vitest](https://vitest.dev/):
+
+```bash
+npm install   # one-time, installs devDependencies (vitest, jsdom)
+npm test      # run the suite once
+npm run test:watch  # re-run on change
+```
+
 ### Project Structure
 
 ```
