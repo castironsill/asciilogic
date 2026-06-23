@@ -11,7 +11,7 @@ import { ControlsManager } from './ui/controls.js';
 import { LineStyleManager } from './utils/lineStyles.js';
 import { BoxStyleManager } from './utils/boxStyles.js';
 import { notifications } from './ui/notifications.js';
-import { isPointNearElement, isElementInBox, getNormalizedBox, distanceToLineSegment } from './utils/geometry.js';
+import { isPointNearElement, isElementInBox, getNormalizedBox, distanceToLineSegment, getElementsBounds } from './utils/geometry.js';
 
 export class DrawingApp {
     constructor() {
@@ -272,10 +272,18 @@ export class DrawingApp {
             });
         }
         
-        // Auto-save
-        setInterval(() => {
-            this.storage.save();
-        }, 30000); // Save every 30 seconds
+        // Auto-save every 30 seconds. Back off if storage repeatedly fails
+        // (e.g. quota exceeded) so we don't spin and spam the console.
+        let saveFailures = 0;
+        this.autoSaveTimer = setInterval(() => {
+            const ok = this.storage.save();
+            if (ok) {
+                saveFailures = 0;
+            } else if (++saveFailures >= 3) {
+                clearInterval(this.autoSaveTimer);
+                notifications.show('Auto-save disabled: browser storage is full');
+            }
+        }, 30000);
     }
     
     handleMouseDown(e) {
@@ -405,8 +413,10 @@ export class DrawingApp {
             'b': 'box',
             't': 'text'
         };
-        
-        if (e.key && shortcuts[e.key.toLowerCase()]) {
+
+        // Single-key tool shortcuts must not hijack Ctrl/Cmd combos
+        // (e.g. Ctrl+B, Ctrl+A) — those are handled below or by the browser.
+        if (!e.ctrlKey && !e.metaKey && e.key && shortcuts[e.key.toLowerCase()]) {
             const button = document.querySelector(`[data-tool="${shortcuts[e.key.toLowerCase()]}"]`);
             if (button) button.click();
         }
@@ -475,41 +485,13 @@ export class DrawingApp {
             return;
         }
         
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        
-        this.elements.forEach(el => {
-            if (el.type === 'text') {
-                const fontSize = el.fontSize || 16;
-                const charWidth = fontSize * 0.6;
-                minX = Math.min(minX, el.x);
-                minY = Math.min(minY, el.y - fontSize);
-                maxX = Math.max(maxX, el.x + el.text.length * charWidth);
-                maxY = Math.max(maxY, el.y + 10);
-            } else if (el.type === 'box') {
-                minX = Math.min(minX, el.startX, el.endX);
-                minY = Math.min(minY, el.startY, el.endY);
-                maxX = Math.max(maxX, el.startX, el.endX);
-                maxY = Math.max(maxY, el.startY, el.endY);
-            } else {
-                minX = Math.min(minX, el.startX, el.endX);
-                minY = Math.min(minY, el.startY, el.endY);
-                maxX = Math.max(maxX, el.startX, el.endX);
-                maxY = Math.max(maxY, el.startY, el.endY);
-                
-                if (el.bendX !== undefined) {
-                    minX = Math.min(minX, el.bendX);
-                    minY = Math.min(minY, el.bendY);
-                    maxX = Math.max(maxX, el.bendX);
-                    maxY = Math.max(maxY, el.bendY);
-                }
-            }
-        });
-        
+        const bounds = getElementsBounds(this.elements, this.ctx);
+
         const padding = 50;
-        minX -= padding;
-        minY -= padding;
-        maxX += padding;
-        maxY += padding;
+        const minX = bounds.minX - padding;
+        const minY = bounds.minY - padding;
+        const maxX = bounds.maxX + padding;
+        const maxY = bounds.maxY + padding;
         
         const contentWidth = maxX - minX;
         const contentHeight = maxY - minY;
@@ -1209,36 +1191,11 @@ export class DrawingApp {
         }
         
         // Find the bounds of selected elements to calculate center point
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        
-        elementsToCopy.forEach(el => {
-            if (el.type === 'text') {
-                minX = Math.min(minX, el.x);
-                minY = Math.min(minY, el.y);
-                maxX = Math.max(maxX, el.x);
-                maxY = Math.max(maxY, el.y);
-            } else if (el.type === 'box') {
-                minX = Math.min(minX, el.startX, el.endX);
-                minY = Math.min(minY, el.startY, el.endY);
-                maxX = Math.max(maxX, el.startX, el.endX);
-                maxY = Math.max(maxY, el.startY, el.endY);
-            } else {
-                minX = Math.min(minX, el.startX, el.endX);
-                minY = Math.min(minY, el.startY, el.endY);
-                maxX = Math.max(maxX, el.startX, el.endX);
-                maxY = Math.max(maxY, el.startY, el.endY);
-                if (el.bendX !== undefined) {
-                    minX = Math.min(minX, el.bendX);
-                    minY = Math.min(minY, el.bendY);
-                    maxX = Math.max(maxX, el.bendX);
-                    maxY = Math.max(maxY, el.bendY);
-                }
-            }
-        });
-        
+        const bounds = getElementsBounds(elementsToCopy, this.ctx);
+
         // Calculate center point of selection
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
+        const centerX = (bounds.minX + bounds.maxX) / 2;
+        const centerY = (bounds.minY + bounds.maxY) / 2;
         
         // Deep copy elements with relative positions to center
         elementsToCopy.forEach(el => {

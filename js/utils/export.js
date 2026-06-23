@@ -3,19 +3,10 @@
 export class ExportManager {
     constructor(app) {
         this.app = app;
-        this.setupEventListeners();
+        // Note: the Export button click is wired in ControlsManager.
+        // Don't add a second listener here or the modal opens twice.
     }
-    
-    setupEventListeners() {
-        const exportBtn = document.getElementById('export-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => {
-                const asciiText = this.exportToASCII(false, {}); // Start with basic
-                this.app.modalManager.showExportModal(asciiText);
-            });
-        }
-    }
-    
+
     exportToASCII(useExtended = false, wrapperOptions = {}) {
         if (this.app.elements.length === 0) {
             return 'No drawing to export';

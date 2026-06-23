@@ -447,8 +447,6 @@ export class ModalManager {
                 finalContent = isExtended ? '\uFEFF' + finalContent : finalContent;
             }
             
-            console.log('Downloading with filename:', filename); // Debug log
-            
             const blob = new Blob([finalContent], { type: mimeType });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -480,8 +478,6 @@ export class ModalManager {
                     // Auto-generated name with date
                     filename = `ascii-drawing_${date}.png`;
                 }
-                
-                console.log('Downloading PNG with filename:', filename); // Debug log
                 
                 // Export at higher quality
                 canvas.toBlob((blob) => {

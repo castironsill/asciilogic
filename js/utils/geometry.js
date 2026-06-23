@@ -7,6 +7,54 @@ export function distanceToLineSegment(px, py, x1, y1, x2, y2) {
     return Math.sqrt((px - nearestX) ** 2 + (py - nearestY) ** 2);
 }
 
+// Compute the bounding box of a set of elements.
+// Returns null for an empty list so callers can decide on a default.
+// Pass a canvas `ctx` for accurate text measurement; without one,
+// text width is estimated from character count (monospace ~0.6em).
+export function getElementsBounds(elements, ctx = null) {
+    if (!elements || elements.length === 0) return null;
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    elements.forEach(el => {
+        if (el.type === 'text') {
+            const fontSize = el.fontSize || 16;
+            const lines = (el.text || '').split('\n');
+            let maxWidth;
+            if (ctx) {
+                ctx.save();
+                ctx.font = `${fontSize}px monospace`;
+                maxWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+                ctx.restore();
+            } else {
+                maxWidth = Math.max(...lines.map(line => line.length)) * fontSize * 0.6;
+            }
+            minX = Math.min(minX, el.x);
+            minY = Math.min(minY, el.y - fontSize);
+            maxX = Math.max(maxX, el.x + maxWidth);
+            maxY = Math.max(maxY, el.y + (lines.length * fontSize * 1.2));
+        } else if (el.type === 'box') {
+            minX = Math.min(minX, el.startX, el.endX);
+            minY = Math.min(minY, el.startY, el.endY);
+            maxX = Math.max(maxX, el.startX, el.endX);
+            maxY = Math.max(maxY, el.startY, el.endY);
+        } else {
+            minX = Math.min(minX, el.startX, el.endX);
+            minY = Math.min(minY, el.startY, el.endY);
+            maxX = Math.max(maxX, el.startX, el.endX);
+            maxY = Math.max(maxY, el.startY, el.endY);
+            if (el.bendX !== undefined) {
+                minX = Math.min(minX, el.bendX);
+                minY = Math.min(minY, el.bendY);
+                maxX = Math.max(maxX, el.bendX);
+                maxY = Math.max(maxY, el.bendY);
+            }
+        }
+    });
+
+    return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+}
+
 export function getNormalizedBox(box) {
     return {
         minX: Math.min(box.startX, box.endX),
