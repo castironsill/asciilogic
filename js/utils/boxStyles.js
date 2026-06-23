@@ -33,7 +33,7 @@ export class BoxStyleManager {
         this.app.eventBus?.on('toolChanged', (tool) => {
             const boxStyleControls = document.getElementById('box-style-controls');
             if (boxStyleControls) {
-                boxStyleControls.style.display = (tool === 'box') ? 'flex' : 'none';
+                boxStyleControls.style.display = (tool === 'box' || tool === 'ellipse') ? 'flex' : 'none';
             }
         });
         

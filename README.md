@@ -10,6 +10,7 @@ A powerful browser-based ASCII diagram tool for creating logic diagrams, flowcha
   - 📏 Lines with automatic 90° bends and multiple styles (solid, dashed, dotted)
   - ➡️ Directional arrows with line styles
   - ⬜ Boxes with fills (solid colors, hatching patterns)
+  - ⭕ Circles and ellipses with the same fill/pattern/color options
   - 📝 Text with adjustable font sizes
   - 🎨 Color picker for all elements (8 color options)
 
@@ -53,6 +54,7 @@ Visit [asciilogic.com](https://asciilogic.com) to start creating diagrams instan
 - `L` - Line tool
 - `A` - Arrow tool
 - `B` - Box tool
+- `C` - Ellipse / circle tool
 - `T` - Text tool
 - `Ctrl+C` - Copy selected elements
 - `Ctrl+V` - Paste at cursor position

@@ -33,7 +33,7 @@ export function getElementsBounds(elements, ctx = null) {
             minY = Math.min(minY, el.y - fontSize);
             maxX = Math.max(maxX, el.x + maxWidth);
             maxY = Math.max(maxY, el.y + (lines.length * fontSize * 1.2));
-        } else if (el.type === 'box') {
+        } else if (el.type === 'box' || el.type === 'ellipse') {
             minX = Math.min(minX, el.startX, el.endX);
             minY = Math.min(minY, el.startY, el.endY);
             maxX = Math.max(maxX, el.startX, el.endX);
@@ -83,11 +83,22 @@ export function isPointNearElement(x, y, element, ctx, fontSize = 16) {
         const maxX = Math.max(element.startX, element.endX);
         const minY = Math.min(element.startY, element.endY);
         const maxY = Math.max(element.startY, element.endY);
-        
+
         return x >= minX - threshold && x <= maxX + threshold &&
                y >= minY - threshold && y <= maxY + threshold &&
                (Math.abs(x - minX) < threshold || Math.abs(x - maxX) < threshold ||
                 Math.abs(y - minY) < threshold || Math.abs(y - maxY) < threshold);
+    } else if (element.type === 'ellipse') {
+        const cx = (element.startX + element.endX) / 2;
+        const cy = (element.startY + element.endY) / 2;
+        const rx = Math.abs(element.endX - element.startX) / 2;
+        const ry = Math.abs(element.endY - element.startY) / 2;
+        if (rx <= 0 || ry <= 0) return false;
+        // Selectable anywhere inside the ellipse (with a small margin),
+        // which is friendly for filled shapes.
+        const nx = (x - cx) / rx;
+        const ny = (y - cy) / ry;
+        return nx * nx + ny * ny <= 1.15;
     } else {
         if (element.bendX !== undefined) {
             return distanceToLineSegment(x, y, element.startX, element.startY, element.bendX, element.bendY) < threshold ||
@@ -102,13 +113,13 @@ export function isElementInBox(element, box) {
     if (element.type === 'text') {
         return element.x >= box.minX && element.x <= box.maxX &&
                element.y >= box.minY && element.y <= box.maxY;
-    } else if (element.type === 'box') {
+    } else if (element.type === 'box' || element.type === 'ellipse') {
         const elMinX = Math.min(element.startX, element.endX);
         const elMaxX = Math.max(element.startX, element.endX);
         const elMinY = Math.min(element.startY, element.endY);
         const elMaxY = Math.max(element.startY, element.endY);
-        
-        return !(elMaxX < box.minX || elMinX > box.maxX || 
+
+        return !(elMaxX < box.minX || elMinX > box.maxX ||
                  elMaxY < box.minY || elMinY > box.maxY);
     } else {
         const points = [

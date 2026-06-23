@@ -1,6 +1,6 @@
 // js/DrawingApp.js - Main application class
 
-import { SelectTool, LineTool, TextTool, ArrowTool, BoxTool } from './tools/index.js';
+import { SelectTool, LineTool, TextTool, ArrowTool, BoxTool, EllipseTool } from './tools/index.js';
 import { Grid } from './utils/grid.js';
 import { ExportManager } from './utils/export.js';
 import { AsciiImporter } from './utils/asciiImport.js';
@@ -128,7 +128,8 @@ export class DrawingApp {
             line: new LineTool(this),
             text: new TextTool(this),
             arrow: new ArrowTool(this),
-            box: new BoxTool(this)
+            box: new BoxTool(this),
+            ellipse: new EllipseTool(this)
         };
     }
     
@@ -343,6 +344,7 @@ export class DrawingApp {
             'l': 'line',
             'a': 'arrow',
             'b': 'box',
+            'c': 'ellipse',
             't': 'text'
         };
 
@@ -382,6 +384,7 @@ export class DrawingApp {
                 line: 'crosshair',
                 arrow: 'crosshair',
                 box: 'crosshair',
+                ellipse: 'crosshair',
                 text: 'text'
             };
             this.mainCanvas.style.cursor = cursors[this.currentTool] || 'default';
@@ -625,7 +628,7 @@ export class DrawingApp {
             ctx.lineWidth = 2;
             
             this.selectedElements.forEach(el => {
-                if (el.type === 'box') {
+                if (el.type === 'box' || el.type === 'ellipse') {
                     ctx.setLineDash([5, 5]);
                     const minX = Math.min(el.startX, el.endX);
                     const maxX = Math.max(el.startX, el.endX);
@@ -661,7 +664,7 @@ export class DrawingApp {
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
             
-            if (this.selectedElement.type === 'box') {
+            if (this.selectedElement.type === 'box' || this.selectedElement.type === 'ellipse') {
                 const minX = Math.min(this.selectedElement.startX, this.selectedElement.endX);
                 const maxX = Math.max(this.selectedElement.startX, this.selectedElement.endX);
                 const minY = Math.min(this.selectedElement.startY, this.selectedElement.endY);

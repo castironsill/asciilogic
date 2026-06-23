@@ -26,6 +26,9 @@ export class Renderer {
             case 'box':
                 this.drawBox(ctx, element);
                 break;
+            case 'ellipse':
+                this.drawEllipse(ctx, element);
+                break;
             case 'text':
                 this.drawText(ctx, element);
                 break;
@@ -121,6 +124,48 @@ export class Renderer {
         
         // Draw border - use the current strokeStyle which was set in drawElement
         ctx.strokeRect(x, y, width, height);
+    }
+
+    drawEllipse(ctx, element) {
+        const x = Math.min(element.startX, element.endX);
+        const y = Math.min(element.startY, element.endY);
+        const width = Math.abs(element.endX - element.startX);
+        const height = Math.abs(element.endY - element.startY);
+        const cx = x + width / 2;
+        const cy = y + height / 2;
+        const rx = width / 2;
+        const ry = height / 2;
+
+        if (rx <= 0 || ry <= 0) return;
+
+        const path = () => {
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        };
+
+        // Fill (clipped to the ellipse so patterns don't bleed past the curve)
+        if (element.fill && element.fill !== 'none') {
+            ctx.save();
+            path();
+            ctx.clip();
+
+            if (element.fill === 'solid') {
+                ctx.fillStyle = element.color || '#ffffff';
+                ctx.globalAlpha = 0.3;
+                ctx.fillRect(x, y, width, height);
+            } else if (element.fill === 'pattern' && element.pattern && element.pattern !== 'none') {
+                const pattern = this.createPattern(ctx, element.pattern, element.color || '#ffffff');
+                if (pattern) {
+                    ctx.fillStyle = pattern;
+                    ctx.fillRect(x, y, width, height);
+                }
+            }
+            ctx.restore();
+        }
+
+        // Border
+        path();
+        ctx.stroke();
     }
     
     createPattern(ctx, patternType, color) {

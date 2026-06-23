@@ -156,6 +156,8 @@ export class ExportManager {
                 this.drawLineToGrid(grid, el, toGridX, toGridY, chars, useExtended);
             } else if (el.type === 'box') {
                 this.drawBoxToGrid(grid, el, toGridX, toGridY, chars);
+            } else if (el.type === 'ellipse') {
+                this.drawEllipseToGrid(grid, el, toGridX, toGridY, chars);
             } else if (el.type === 'text') {
                 this.drawTextToGrid(grid, el, toGridX, toGridY);
             }
@@ -260,6 +262,41 @@ export class ExportManager {
         if (this.isValidCell(grid, y2, x2)) grid[y2][x2] = chars.bottomRight;
     }
     
+    drawEllipseToGrid(grid, el, toGridX, toGridY, chars) {
+        const x1 = toGridX(Math.min(el.startX, el.endX));
+        const y1 = toGridY(Math.min(el.startY, el.endY));
+        const x2 = toGridX(Math.max(el.startX, el.endX));
+        const y2 = toGridY(Math.max(el.startY, el.endY));
+
+        const cx = (x1 + x2) / 2;
+        const cy = (y1 + y2) / 2;
+        const rx = (x2 - x1) / 2;
+        const ry = (y2 - y1) / 2;
+        if (rx <= 0 || ry <= 0) return;
+
+        // Left/right extent for each row.
+        for (let gy = y1; gy <= y2; gy++) {
+            const dy = (gy - cy) / ry;
+            if (Math.abs(dy) > 1) continue;
+            const dx = rx * Math.sqrt(1 - dy * dy);
+            const lx = Math.round(cx - dx);
+            const rxp = Math.round(cx + dx);
+            if (this.isValidCell(grid, gy, lx)) grid[gy][lx] = chars.vertical;
+            if (this.isValidCell(grid, gy, rxp)) grid[gy][rxp] = chars.vertical;
+        }
+
+        // Top/bottom extent for each column (caps the curve).
+        for (let gx = x1; gx <= x2; gx++) {
+            const dx = (gx - cx) / rx;
+            if (Math.abs(dx) > 1) continue;
+            const dy = ry * Math.sqrt(1 - dx * dx);
+            const ty = Math.round(cy - dy);
+            const by = Math.round(cy + dy);
+            if (this.isValidCell(grid, ty, gx)) grid[ty][gx] = chars.horizontal;
+            if (this.isValidCell(grid, by, gx)) grid[by][gx] = chars.horizontal;
+        }
+    }
+
     drawTextToGrid(grid, text, toGridX, toGridY) {
         const x = toGridX(text.x);
         const y = toGridY(text.y);
@@ -397,7 +434,7 @@ export class ExportManager {
         
         // First pass: collect all unique patterns needed
         this.app.elements.forEach(el => {
-            if (el.type === 'box' && el.fill === 'pattern' && el.pattern !== 'none') {
+            if ((el.type === 'box' || el.type === 'ellipse') && el.fill === 'pattern' && el.pattern !== 'none') {
                 const color = el.color || '#ffffff';
                 const patternId = `${el.pattern}-${color.replace('#', '')}`;
                 if (!patternDefs.has(patternId)) {
@@ -474,6 +511,25 @@ export class ExportManager {
                 }
                 
                 svg += `\n    <rect x="${x}" y="${y}" width="${rectWidth}" height="${rectHeight}" stroke="${color}" stroke-width="2" ${fillAttr} stroke-linejoin="round"${transform}/>`;
+            } else if (el.type === 'ellipse') {
+                const minX = Math.min(el.startX, el.endX);
+                const minY = Math.min(el.startY, el.endY);
+                const w = Math.abs(el.endX - el.startX);
+                const h = Math.abs(el.endY - el.startY);
+                const ecx = minX + w / 2;
+                const ecy = minY + h / 2;
+                const rx = w / 2;
+                const ry = h / 2;
+
+                let fillAttr = 'fill="none"';
+                if (el.fill === 'solid') {
+                    fillAttr = `fill="${color}" fill-opacity="0.3"`;
+                } else if (el.fill === 'pattern' && el.pattern !== 'none') {
+                    const patternId = `${el.pattern}-${color.replace('#', '')}`;
+                    fillAttr = `fill="url(#${patternId})"`;
+                }
+
+                svg += `\n    <ellipse cx="${ecx}" cy="${ecy}" rx="${rx}" ry="${ry}" stroke="${color}" stroke-width="2" ${fillAttr}${transform}/>`;
             } else if (el.type === 'text') {
                 const fontSize = el.fontSize || 16;
                 // Escape special characters in text
@@ -639,6 +695,8 @@ export class ExportManager {
             } else if (el.type === 'box') {
                 // Export box with color and fill
                 dxf += this.dxfBox(el, scale, flipY, colorIndex);
+            } else if (el.type === 'ellipse') {
+                dxf += this.dxfEllipse(el, scale, flipY, colorIndex);
             } else if (el.type === 'text') {
                 // Export text with flipped Y
                 dxf += this.dxfText(
@@ -832,6 +890,31 @@ export class ExportManager {
         return dxf;
     }
     
+    dxfEllipse(element, scale, flipY, colorIndex) {
+        // Approximate the ellipse as a closed polyline so it renders in
+        // R12-era CAD software that lacks the ELLIPSE entity.
+        const cxPix = (element.startX + element.endX) / 2;
+        const cyPix = (element.startY + element.endY) / 2;
+        const rxPix = Math.abs(element.endX - element.startX) / 2;
+        const ryPix = Math.abs(element.endY - element.startY) / 2;
+        if (rxPix <= 0 || ryPix <= 0) return '';
+
+        const segments = 48;
+        let dxf = '0\nLWPOLYLINE\n8\n0\n';
+        dxf += `62\n${colorIndex}\n`;
+        dxf += `90\n${segments}\n`;
+        dxf += '70\n1\n'; // closed
+
+        for (let i = 0; i < segments; i++) {
+            const theta = (2 * Math.PI * i) / segments;
+            const px = (cxPix + rxPix * Math.cos(theta)) * scale;
+            const py = flipY(cyPix + ryPix * Math.sin(theta));
+            dxf += `10\n${px}\n20\n${py}\n`;
+        }
+
+        return dxf;
+    }
+
     dxfLine(x1, y1, x2, y2, lineStyle = 'solid', colorIndex = 7) {
         const lineType = this.getLineTypeName(lineStyle);
         return `0\nLINE\n8\n0\n6\n${lineType}\n62\n${colorIndex}\n10\n${x1}\n20\n${y1}\n11\n${x2}\n21\n${y2}\n`;

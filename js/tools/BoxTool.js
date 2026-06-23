@@ -8,13 +8,13 @@ export class BoxTool extends LineTool {
         this.elementType = 'box';
     }
 
-    // Boxes drag corner-to-corner with no 90° bend logic.
+    // Boxes (and ellipses) drag corner-to-corner with no 90° bend logic.
     handleMouseMove(x, y, e) {
         if (this.isDrawing && this.tempElement) {
             const snappedX = this.app.grid.snapToGrid(x);
             const snappedY = this.app.grid.snapToGrid(y);
 
-            this.tempElement.type = 'box';
+            this.tempElement.type = this.elementType;
             this.tempElement.endX = snappedX;
             this.tempElement.endY = snappedY;
             delete this.tempElement.bendX;
