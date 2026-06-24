@@ -92,20 +92,21 @@ export class ModalManager {
                 const downloadImageBtn = document.getElementById('download-image');
                 const svgOptions = document.getElementById('svg-options');
                 const asciiOptions = document.getElementById('ascii-options');
-                
-                // Clear filename when switching formats (optional - remove if you want to keep it)
-                // document.getElementById('export-filename').value = '';
-                
+                const imageOptions = document.getElementById('image-options');
+
                 // Hide all options by default
                 if (svgOptions) svgOptions.style.display = 'none';
                 if (asciiOptions) asciiOptions.style.display = 'none';
-                
+                if (imageOptions) imageOptions.style.display = 'none';
+                if (exportPreview) exportPreview.style.background = '';
+
                 if (format === 'png') {
                     // Show image preview
                     if (this.app.exportManager) {
-                        const canvas = this.app.exportManager.exportToPNG();
+                        const canvas = this.app.exportManager.exportToPNG(this.getImageOptions());
                         if (exportPreview) {
                             exportPreview.innerHTML = '';
+                            exportPreview.style.background = this.previewBackdrop();
                             exportPreview.appendChild(canvas);
                         }
                     }
@@ -113,18 +114,20 @@ export class ModalManager {
                     if (copyBtn) copyBtn.style.display = 'none';
                     if (downloadBtn) downloadBtn.style.display = 'none';
                     if (downloadImageBtn) downloadImageBtn.style.display = 'block';
+                    if (imageOptions) imageOptions.style.display = 'block';
                 } else if (format === 'svg') {
                     // Show SVG preview
                     if (this.app.exportManager) {
                         // Check if group elements checkbox is checked
                         const groupCheckbox = document.getElementById('svg-group-elements');
                         const groupElements = groupCheckbox ? groupCheckbox.checked : true;
-                        
-                        const svgText = this.app.exportManager.exportToSVG(groupElements);
+
+                        const svgText = this.app.exportManager.exportToSVG(groupElements, this.getImageOptions());
                         if (exportPreview) {
+                            exportPreview.style.background = '';
                             // Display SVG as both visual preview and text
                             exportPreview.innerHTML = `
-                                <div style="border: 1px solid #333; margin-bottom: 10px; background: #1a1a1a;">
+                                <div style="border: 1px solid #333; margin-bottom: 10px; background: ${this.previewBackdrop()};">
                                     ${svgText}
                                 </div>
                                 <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 12px; color: #999; max-height: 200px; overflow: auto;">${svgText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
@@ -136,6 +139,7 @@ export class ModalManager {
                     if (downloadBtn) downloadBtn.style.display = 'block';
                     if (downloadImageBtn) downloadImageBtn.style.display = 'none';
                     if (svgOptions) svgOptions.style.display = 'block';
+                    if (imageOptions) imageOptions.style.display = 'block';
                 } else if (format === 'dxf') {
                     // Show DXF preview
                     if (this.app.exportManager) {
@@ -175,6 +179,19 @@ export class ModalManager {
             });
         });
         
+        // Image (PNG/SVG) option listeners: re-render the preview on change.
+        ['export-bg', 'export-watermark'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', () => {
+                    const activeFormat = document.querySelector('[data-format].active');
+                    if (activeFormat && (activeFormat.dataset.format === 'png' || activeFormat.dataset.format === 'svg')) {
+                        activeFormat.click();
+                    }
+                });
+            }
+        });
+
         // SVG group elements checkbox listener
         const svgGroupCheckbox = document.getElementById('svg-group-elements');
         if (svgGroupCheckbox) {
@@ -216,6 +233,25 @@ export class ModalManager {
         });
     }
     
+    // Background / watermark options for PNG and SVG exports.
+    getImageOptions() {
+        const bg = document.getElementById('export-bg');
+        const wm = document.getElementById('export-watermark');
+        return {
+            background: bg ? bg.value : 'dark',
+            watermark: wm ? wm.checked : true
+        };
+    }
+
+    // A backdrop for the preview pane that matches the chosen background
+    // (checkerboard for transparent so it reads as see-through).
+    previewBackdrop() {
+        const bg = this.getImageOptions().background;
+        if (bg === 'white') return '#ffffff';
+        if (bg === 'transparent') return 'repeating-conic-gradient(#bbb 0% 25%, #fff 0% 50%) 50% / 16px 16px';
+        return '#1a1a1a';
+    }
+
     updatePreview(type) {
         const canvas = document.getElementById(`${type}-preview`);
         if (!canvas || !canvas.getContext) return;
@@ -354,7 +390,7 @@ export class ModalManager {
                 // Check if group elements checkbox is checked
                 const groupCheckbox = document.getElementById('svg-group-elements');
                 const groupElements = groupCheckbox ? groupCheckbox.checked : true;
-                textToCopy = this.app.exportManager.exportToSVG(groupElements);
+                textToCopy = this.app.exportManager.exportToSVG(groupElements, this.getImageOptions());
             } else {
                 // For other formats, get the text content
                 // For ASCII formats, regenerate with current options
@@ -425,7 +461,7 @@ export class ModalManager {
                 // Check if group elements checkbox is checked
                 const groupCheckbox = document.getElementById('svg-group-elements');
                 const groupElements = groupCheckbox ? groupCheckbox.checked : true;
-                finalContent = this.app.exportManager.exportToSVG(groupElements);
+                finalContent = this.app.exportManager.exportToSVG(groupElements, this.getImageOptions());
                 if (customFilename) {
                     filename = customFilename.endsWith('.svg') ? customFilename : customFilename + '.svg';
                 } else {

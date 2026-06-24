@@ -369,6 +369,7 @@
                 <li><strong>SVG</strong> - Scalable vector graphics perfect for web and print</li>
                 <li><strong>DXF</strong> - CAD format for importing into AutoCAD and similar software</li>
             </ul>
+            <p>For PNG and SVG you can choose a <strong>Dark</strong>, <strong>White</strong>, or <strong>Transparent</strong> background and turn the watermark off — handy for dropping a diagram into a light document. Uncolored elements switch to dark ink automatically on light backgrounds.</p>
 
             <h2>Common Use Cases</h2>
             <ul>
@@ -426,6 +427,22 @@
                 <input type="text" id="export-filename" placeholder="Leave empty for auto-generated name" style="width: 100%; background: var(--bg-tertiary); border: 1px solid var(--bg-tertiary); color: var(--text-primary); padding: 8px; border-radius: 4px;">
             </div>
             
+            <!-- Image (PNG/SVG) Options -->
+            <div id="image-options" style="margin: 15px 0; display: none;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <label for="export-bg" style="font-weight: 500;">Background:</label>
+                    <select id="export-bg" class="style-select">
+                        <option value="dark">Dark</option>
+                        <option value="white">White</option>
+                        <option value="transparent">Transparent</option>
+                    </select>
+                </div>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="export-watermark" checked style="cursor: pointer;">
+                    <span>Include asciilogic.com watermark</span>
+                </label>
+            </div>
+
             <!-- SVG Options -->
             <div id="svg-options" style="margin: 15px 0; display: none;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">

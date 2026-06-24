@@ -390,18 +390,31 @@ export class ExportManager {
         return y >= 0 && y < grid.length && x >= 0 && x < grid[0].length;
     }
     
-    exportToPNG() {
+    // Resolve a background option into the page fill, the default "ink" for
+    // uncolored elements, and the label-panel fill.
+    backgroundColors(background) {
+        if (background === 'white') return { fill: '#ffffff', ink: '#1a1a1a', panel: '#ffffff' };
+        if (background === 'transparent') return { fill: null, ink: '#1a1a1a', panel: '#ffffff' };
+        return { fill: '#1a1a1a', ink: '#ffffff', panel: '#1a1a1a' }; // dark (default)
+    }
+
+    exportToPNG(options = {}) {
+        const { background = 'dark', watermark = true } = options;
+        const colors = this.backgroundColors(background);
+
         // Create a canvas for the PNG export at 2x resolution for higher quality
         const scale = 2; // 2x resolution for retina quality
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
+
         if (this.app.elements.length === 0) {
             canvas.width = 800; // 2x of 400
             canvas.height = 600; // 2x of 300
             ctx.scale(scale, scale);
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(0, 0, 400, 300);
+            if (colors.fill) {
+                ctx.fillStyle = colors.fill;
+                ctx.fillRect(0, 0, 400, 300);
+            }
             ctx.fillStyle = '#666';
             ctx.font = '16px monospace';
             ctx.textAlign = 'center';
@@ -410,56 +423,64 @@ export class ExportManager {
             canvas.style.height = '300px';
             return canvas;
         }
-        
+
         // Get bounds from renderer
         const bounds = this.app.renderer.getContentBounds();
-        
+
         // Add padding
         const padding = 40;
         const width = bounds.width + (padding * 2);
         const height = bounds.height + (padding * 2);
-        
+
         // Set canvas size at 2x resolution
         canvas.width = width * scale;
         canvas.height = height * scale;
-        
+
         // Set display size (CSS pixels)
         canvas.style.width = width + 'px';
         canvas.style.height = height + 'px';
-        
+
         // Scale context for 2x resolution
         ctx.scale(scale, scale);
-        
-        // Set background
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(0, 0, width, height);
-        
+
+        // Background (skipped entirely when transparent)
+        if (colors.fill) {
+            ctx.fillStyle = colors.fill;
+            ctx.fillRect(0, 0, width, height);
+        }
+
         // Translate to account for bounds
         ctx.translate(padding - bounds.minX, padding - bounds.minY);
-        
+
         // Enable anti-aliasing
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        
+
         // Draw all elements using the renderer's drawElement method
         this.app.elements.forEach(el => {
-            this.app.renderer.drawElement(ctx, el);
+            this.app.renderer.drawElement(ctx, el, false, colors.ink, colors.panel);
         });
-        
-        // Add a subtle watermark
-        ctx.globalAlpha = 0.3;
-        ctx.font = '12px monospace';
-        ctx.fillStyle = '#666';
-        ctx.fillText('asciilogic.com', width - 90 - padding + bounds.minX, height - 10 - padding + bounds.minY);
-        
+
+        // Optional watermark
+        if (watermark) {
+            ctx.globalAlpha = 0.3;
+            ctx.font = '12px monospace';
+            ctx.fillStyle = '#666';
+            ctx.fillText('asciilogic.com', width - 90 - padding + bounds.minX, height - 10 - padding + bounds.minY);
+        }
+
         return canvas;
     }
     
-    exportToSVG(groupElements = true) {
+    exportToSVG(groupElements = true, options = {}) {
+        const { background = 'dark', watermark = true } = options;
+        const colors = this.backgroundColors(background);
+        const ink = colors.ink;
+
         if (this.app.elements.length === 0) {
             // Return empty SVG with message
-            return `<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-                <rect width="400" height="300" fill="#1a1a1a"/>
+            const bgRect = colors.fill ? `\n                <rect width="400" height="300" fill="${colors.fill}"/>` : '';
+            return `<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">${bgRect}
                 <text x="200" y="150" font-family="monospace" font-size="16" fill="#666" text-anchor="middle">No drawing to export</text>
             </svg>`;
         }
@@ -495,8 +516,10 @@ export class ExportManager {
         
         svg += '\n  </defs>';
         
-        // Add background
-        svg += `\n  <rect width="${width}" height="${height}" fill="#1a1a1a"/>`;
+        // Add background (omitted when transparent)
+        if (colors.fill) {
+            svg += `\n  <rect width="${width}" height="${height}" fill="${colors.fill}"/>`;
+        }
         
         // Create a group with translation to handle bounds - or individual transforms
         if (groupElements) {
@@ -506,7 +529,7 @@ export class ExportManager {
         // Draw all elements
         this.app.elements.forEach(el => {
             const transform = groupElements ? '' : ` transform="translate(${padding - bounds.minX}, ${padding - bounds.minY})"`;
-            const color = el.color || '#ffffff';
+            const color = el.color || ink;
             
             if (el.type === 'line' || el.type === 'arrow') {
                 // Draw line path
@@ -557,7 +580,7 @@ export class ExportManager {
                     const boxW = maxLen * charW + 6;
                     const boxH = lines.length * fontSize * 1.2 + 2;
                     const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    svg += `\n    <rect x="${mid.x - boxW / 2}" y="${mid.y - boxH / 2}" width="${boxW}" height="${boxH}" fill="#1a1a1a"${transform}/>`;
+                    svg += `\n    <rect x="${mid.x - boxW / 2}" y="${mid.y - boxH / 2}" width="${boxW}" height="${boxH}" fill="${colors.panel}"${transform}/>`;
                     const tspans = lines
                         .map((line, i) => `<tspan x="${mid.x}" dy="${i === 0 ? 0 : fontSize * 1.2}">${esc(line)}</tspan>`)
                         .join('');
@@ -627,7 +650,7 @@ export class ExportManager {
                     const boxW = String(el.text).length * charW + 6;
                     const boxH = fontSize * 1.2 + 2;
                     const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    svg += `\n    <rect x="${mx - boxW / 2}" y="${my - boxH / 2}" width="${boxW}" height="${boxH}" fill="#1a1a1a"${transform}/>`;
+                    svg += `\n    <rect x="${mx - boxW / 2}" y="${my - boxH / 2}" width="${boxW}" height="${boxH}" fill="${colors.panel}"${transform}/>`;
                     svg += `\n    <text x="${mx}" y="${my + fontSize / 3}" font-family="monospace" font-size="${fontSize}" fill="${color}" text-anchor="middle"${transform}>${esc(String(el.text))}</text>`;
                 }
             } else if (el.type === 'text') {
@@ -651,8 +674,10 @@ export class ExportManager {
             svg += '\n  </g>';
         }
         
-        // Add watermark
-        svg += `\n  <text x="${width - 90}" y="${height - 10}" font-family="monospace" font-size="12" fill="#666" opacity="0.3">asciilogic.com</text>`;
+        // Optional watermark
+        if (watermark) {
+            svg += `\n  <text x="${width - 90}" y="${height - 10}" font-family="monospace" font-size="12" fill="#666" opacity="0.3">asciilogic.com</text>`;
+        }
         
         // Close SVG
         svg += '\n</svg>';

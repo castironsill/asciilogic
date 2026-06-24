@@ -23,7 +23,8 @@ Live: https://asciilogic.com
   selection together.
 - Copy/paste/duplicate, undo/redo, and autosave to the browser.
 - Import existing ASCII art back into editable elements.
-- Export to ASCII (plain or Unicode box-drawing), PNG, SVG, or DXF.
+- Export to ASCII (plain or Unicode box-drawing), PNG, SVG, or DXF, with a
+  dark, white, or transparent background and an optional watermark.
 
 ## Keyboard shortcuts
 

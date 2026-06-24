@@ -8,23 +8,28 @@ export class Renderer {
         this.app = app;
     }
     
-    drawElement(ctx, element, isTemp = false) {
+    // `ink` overrides the default color for uncolored elements (used by
+    // export so light-default elements stay visible on a white/transparent
+    // background); `panelBg` is the fill behind label/dimension text.
+    drawElement(ctx, element, isTemp = false, ink = null, panelBg = null) {
         ctx.save();
-        
-        const color = isTemp ? '#888888' : (element.color || getComputedStyle(document.documentElement).getPropertyValue('--text-primary'));
+
+        const color = isTemp
+            ? '#888888'
+            : (element.color || ink || getComputedStyle(document.documentElement).getPropertyValue('--text-primary'));
         ctx.strokeStyle = color;
         ctx.fillStyle = color;
         ctx.lineWidth = 2;
-        
+
         switch (element.type) {
             case 'line':
                 this.drawLine(ctx, element);
-                if (element.label) this.drawConnectorLabel(ctx, element);
+                if (element.label) this.drawConnectorLabel(ctx, element, ink, panelBg);
                 break;
             case 'arrow':
                 this.drawLine(ctx, element);
                 this.drawArrowHead(ctx, element);
-                if (element.label) this.drawConnectorLabel(ctx, element);
+                if (element.label) this.drawConnectorLabel(ctx, element, ink, panelBg);
                 break;
             case 'box':
                 this.drawBox(ctx, element);
@@ -33,7 +38,7 @@ export class Renderer {
                 this.drawEllipse(ctx, element);
                 break;
             case 'dimension':
-                this.drawDimension(ctx, element);
+                this.drawDimension(ctx, element, ink, panelBg);
                 break;
             case 'polyline':
                 this.drawPolyline(ctx, element);
@@ -42,7 +47,7 @@ export class Renderer {
                 this.drawText(ctx, element);
                 break;
         }
-        
+
         ctx.restore();
     }
     
@@ -88,14 +93,14 @@ export class Renderer {
     }
     
     // Draw a connector's label centered on the line.
-    drawConnectorLabel(ctx, element) {
+    drawConnectorLabel(ctx, element, ink = null, panelBg = null) {
         const mid = connectorMidpoint(element);
-        this.drawTextPanel(ctx, mid.x, mid.y, element.label, element.labelFontSize || 14, element.color);
+        this.drawTextPanel(ctx, mid.x, mid.y, element.label, element.labelFontSize || 14, element.color || ink, panelBg);
     }
 
     // Centered (possibly multi-line) text with a background panel so it stays
     // readable over whatever it sits on. Shared by labels and dimensions.
-    drawTextPanel(ctx, cx, cy, text, fontSize, color) {
+    drawTextPanel(ctx, cx, cy, text, fontSize, color, panelBg = null) {
         const lines = String(text).split('\n');
         const lineHeight = fontSize * 1.2;
 
@@ -108,8 +113,8 @@ export class Renderer {
         for (const line of lines) maxWidth = Math.max(maxWidth, ctx.measureText(line).width);
         const h = lines.length * lineHeight;
 
-        const bg = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg') || '#1a1a1a';
-        ctx.fillStyle = bg.trim() || '#1a1a1a';
+        const bg = panelBg || (getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg') || '').trim() || '#1a1a1a';
+        ctx.fillStyle = bg;
         ctx.fillRect(cx - maxWidth / 2 - 3, cy - h / 2 - 1, maxWidth + 6, h + 2);
 
         ctx.fillStyle = color || getComputedStyle(document.documentElement).getPropertyValue('--text-primary');
@@ -121,7 +126,7 @@ export class Renderer {
 
     // A not-to-scale dimension: a straight line with perpendicular end ticks
     // and a value centered on it.
-    drawDimension(ctx, element) {
+    drawDimension(ctx, element, ink = null, panelBg = null) {
         ctx.beginPath();
         ctx.moveTo(element.startX, element.startY);
         ctx.lineTo(element.endX, element.endY);
@@ -143,7 +148,7 @@ export class Renderer {
         if (element.text) {
             const mx = (element.startX + element.endX) / 2;
             const my = (element.startY + element.endY) / 2;
-            this.drawTextPanel(ctx, mx, my, element.text, element.fontSize || 14, element.color);
+            this.drawTextPanel(ctx, mx, my, element.text, element.fontSize || 14, element.color || ink, panelBg);
         }
     }
 
