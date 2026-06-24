@@ -36,9 +36,11 @@ export class ControlsManager {
             this.app.history.redo();
         });
         
-        // Grid size
+        // Grid size (kept at a sane minimum; visibility/snap are separate toggles)
         document.getElementById('grid-size').addEventListener('change', (e) => {
-            this.app.gridSize = parseInt(e.target.value);
+            const size = parseInt(e.target.value, 10);
+            this.app.gridSize = Number.isFinite(size) && size >= 1 ? size : 10;
+            e.target.value = this.app.gridSize;
             this.app.grid.draw();
             this.app.render();
         });

@@ -193,10 +193,16 @@
                 <h1 style="font-size: 20px; font-weight: 500; margin: 0;">asciilogic</h1>
                 <div class="settings-row">
                     <label for="grid-size">Grid Size:</label>
-                    <input type="number" id="grid-size" value="10" min="0" max="50" step="5">
-                    <button id="toggle-grid" class="control-btn" style="padding: 4px 8px; margin-left: 5px; font-size: 12px;" title="Toggle grid visibility">
+                    <input type="number" id="grid-size" value="10" min="5" max="50" step="5">
+                    <button id="toggle-grid" class="control-btn active" style="padding: 4px 8px; margin-left: 5px; font-size: 12px;" title="Show / hide grid">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                             <path d="M3 3h6v6H3zm0 8h6v6H3zm8-8h6v6h-6zm0 8h6v6h-6zM3 21h6v-6H3zm8 0h6v-6h-6zm8-18h-6v6h6zm0 8h-6v6h6zm0 8h-6v-6h6z"/>
+                        </svg>
+                    </button>
+                    <button id="toggle-snap" class="control-btn active" style="padding: 4px 8px; margin-left: 5px; font-size: 12px;" title="Snap to grid on / off">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 3v14a4 4 0 0 0 4 4h14"/>
+                            <circle cx="17" cy="17" r="3" fill="currentColor" stroke="none"/>
                         </svg>
                     </button>
                 </div>
@@ -352,8 +358,8 @@
             <h3>Import & Export</h3>
             <p>Import existing ASCII diagrams from other tools or export your creations in multiple formats: ASCII Basic or Extended (Unicode), PNG images, SVG vector graphics, or DXF for CAD software. Perfect for embedding in source code, markdown documentation, presentations, or technical drawings.</p>
 
-            <h3>Grid Snapping</h3>
-            <p>All elements snap to a configurable grid, ensuring clean, aligned diagrams. Adjust grid size from 5 to 50 pixels.</p>
+            <h3>Grid &amp; Snapping</h3>
+            <p>Elements snap to a configurable grid for clean, aligned diagrams (grid size 5–50 pixels). The two buttons next to Grid Size toggle grid <em>visibility</em> and <em>snapping</em> independently — you can hide the grid while still snapping, or show it while drawing freely.</p>
 
             <h2>Export Formats</h2>
             <ul>
@@ -386,7 +392,7 @@
                 <li>Select a box or circle to change its fill and pattern; select a line or arrow to change its line style. Drag a selection box (or Shift+click) over several elements to restyle them all at once.</li>
                 <li>Export to ASCII Extended for cleaner box-drawing characters</li>
                 <li>Export to SVG for scalable graphics that look perfect at any size</li>
-                <li>Set <strong>Grid Size to 0</strong> to hide the grid (better for viewing filled boxes)</li>
+                <li>Use the grid and snap toggles (next to Grid Size) to hide the grid or draw without snapping — they work independently</li>
                 <li>The tool saves your work in browser memory - clear cache carefully!</li>
             </ul>
 

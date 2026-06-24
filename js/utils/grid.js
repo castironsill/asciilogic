@@ -7,8 +7,8 @@ export class Grid {
         const ctx = this.app.gridCtx;
         ctx.clearRect(0, 0, this.app.gridCanvas.width, this.app.gridCanvas.height);
         
-        // Don't draw grid if size is 0
-        if (this.app.gridSize === 0) {
+        // Visibility is independent of snapping and of grid size.
+        if (!this.app.showGrid || !this.app.gridSize) {
             return;
         }
         
@@ -33,8 +33,8 @@ export class Grid {
     }
     
     snapToGrid(value) {
-        // If grid size is 0, don't snap (return exact value)
-        if (this.app.gridSize === 0) {
+        // Snapping is independent of grid visibility.
+        if (!this.app.snapEnabled || !this.app.gridSize) {
             return value;
         }
         return Math.round(value / this.app.gridSize) * this.app.gridSize;

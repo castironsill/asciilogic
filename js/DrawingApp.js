@@ -22,6 +22,9 @@ export class DrawingApp {
     constructor() {
         // Canvas and drawing settings
         this.gridSize = 10;
+        // Grid visibility and snapping are independent.
+        this.showGrid = true;
+        this.snapEnabled = true;
         this.zoom = 1;
         this.offsetX = 0;
         this.offsetY = 0;
@@ -199,28 +202,24 @@ export class DrawingApp {
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
         
         // Grid toggle button
+        // Show-grid toggle (visibility only — does not affect snapping).
         const toggleGridBtn = document.getElementById('toggle-grid');
         if (toggleGridBtn) {
-            let previousGridSize = this.gridSize || 10;
-            
             toggleGridBtn.addEventListener('click', () => {
-                const gridSizeInput = document.getElementById('grid-size');
-                
-                if (this.gridSize === 0) {
-                    // Turn grid back on
-                    this.gridSize = previousGridSize;
-                    gridSizeInput.value = previousGridSize;
-                    toggleGridBtn.style.opacity = '1';
-                } else {
-                    // Turn grid off
-                    previousGridSize = this.gridSize;
-                    this.gridSize = 0;
-                    gridSizeInput.value = 0;
-                    toggleGridBtn.style.opacity = '0.5';
-                }
-                
+                this.showGrid = !this.showGrid;
+                toggleGridBtn.style.opacity = this.showGrid ? '1' : '0.5';
+                toggleGridBtn.classList.toggle('active', this.showGrid);
                 this.grid.draw();
-                this.render();
+            });
+        }
+
+        // Snap toggle (snapping only — does not affect grid visibility).
+        const toggleSnapBtn = document.getElementById('toggle-snap');
+        if (toggleSnapBtn) {
+            toggleSnapBtn.addEventListener('click', () => {
+                this.snapEnabled = !this.snapEnabled;
+                toggleSnapBtn.style.opacity = this.snapEnabled ? '1' : '0.5';
+                toggleSnapBtn.classList.toggle('active', this.snapEnabled);
             });
         }
         
