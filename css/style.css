@@ -125,11 +125,14 @@ body {
     position: relative;
     overflow: hidden;
     background: var(--canvas-bg);
+    /* Let our own touch handlers own gestures here — no browser pan/zoom. */
+    touch-action: none;
 }
 
 canvas {
     position: absolute;
     cursor: crosshair;
+    touch-action: none;
 }
 
 /* Controls */
@@ -415,4 +418,73 @@ kbd {
     /* Ensure canvas doesn't overflow */
     max-height: 280px;
     object-fit: contain;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive / touch layout
+   On narrow screens the vertical tool rail becomes a horizontal, scrollable
+   strip across the top, the title is dropped to reclaim space, and tap targets
+   grow toward the ~44px touch minimum.
+   --------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .toolbar {
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        border-right: none;
+        border-bottom: 1px solid var(--bg-tertiary);
+        padding: 6px 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .tool-btn {
+        margin: 0 4px;
+        flex: 0 0 auto;
+    }
+
+    /* The flex:1 spacer keeps working horizontally, pushing undo/redo to the
+       far end of the strip. Tooltips would spill off the thin strip, so hide
+       them on touch layouts and lean on the buttons' titles/labels instead. */
+    .tool-btn .tooltip {
+        display: none;
+    }
+
+    .top-bar {
+        padding: 6px 10px;
+        gap: 6px 12px;
+    }
+
+    /* Reclaim horizontal space; the page <title>/branding still cover naming. */
+    .top-bar h1 {
+        display: none;
+    }
+
+    .control-btn {
+        min-height: 40px;
+    }
+
+    .controls {
+        bottom: 10px;
+        right: 10px;
+        padding: 6px;
+        gap: 6px;
+    }
+}
+
+/* Coarse-pointer (touch) devices: enlarge the contextual style buttons so
+   they clear the touch-target minimum regardless of viewport width. */
+@media (pointer: coarse) {
+    .style-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .control-btn {
+        min-height: 40px;
+    }
 }

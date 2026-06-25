@@ -177,6 +177,14 @@ export class DrawingApp {
         this.mainCanvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         this.mainCanvas.addEventListener('wheel', (e) => this.handleWheel(e));
         this.mainCanvas.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
+
+        // Touch support: one finger draws/selects (routed through the mouse
+        // handlers), two fingers pinch-zoom and pan. passive:false so we can
+        // preventDefault and stop the browser from scrolling/zooming the page.
+        this.mainCanvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.mainCanvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.mainCanvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+        this.mainCanvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
         
         // Text input
         this.textInput = document.getElementById('text-input');
@@ -328,6 +336,102 @@ export class DrawingApp {
         }
     }
     
+    // --- Touch input -------------------------------------------------------
+    // We translate touches into the existing mouse handlers via a synthetic
+    // event so every tool works on touch without tool-specific changes.
+    synthMouseFromTouch(touch) {
+        return {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            button: 0,
+            shiftKey: false,
+            ctrlKey: false,
+            metaKey: false,
+            altKey: false,
+            preventDefault() {},
+            stopPropagation() {}
+        };
+    }
+
+    touchDistance(a, b) {
+        return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+    }
+
+    touchCenter(a, b) {
+        return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+    }
+
+    handleTouchStart(e) {
+        if (e.touches.length === 1) {
+            e.preventDefault();
+            const t = e.touches[0];
+            this.touchMode = 'draw';
+            this.activeTouchId = t.identifier;
+            this.lastTouchPos = { clientX: t.clientX, clientY: t.clientY };
+            this.handleMouseDown(this.synthMouseFromTouch(t));
+        } else if (e.touches.length === 2) {
+            e.preventDefault();
+            // If a one-finger draw was in progress, end it before pinching.
+            // Tools discard zero-size shapes, so a quick two-finger gesture
+            // that started as a tap leaves nothing behind.
+            if (this.touchMode === 'draw' && this.lastTouchPos) {
+                this.handleMouseUp(this.synthMouseFromTouch(this.lastTouchPos));
+            }
+            this.touchMode = 'pinch';
+            this.activeTouchId = null;
+            const [a, b] = e.touches;
+            this.pinchStartDist = this.touchDistance(a, b);
+            this.pinchStartZoom = this.zoom;
+            this.pinchLastCenter = this.touchCenter(a, b);
+        }
+    }
+
+    handleTouchMove(e) {
+        if (this.touchMode === 'draw' && e.touches.length >= 1) {
+            e.preventDefault();
+            const t = Array.from(e.touches).find(t => t.identifier === this.activeTouchId) || e.touches[0];
+            this.lastTouchPos = { clientX: t.clientX, clientY: t.clientY };
+            this.handleMouseMove(this.synthMouseFromTouch(t));
+        } else if (this.touchMode === 'pinch' && e.touches.length >= 2) {
+            e.preventDefault();
+            const [a, b] = e.touches;
+            const dist = this.touchDistance(a, b);
+            const center = this.touchCenter(a, b);
+            // Pan by how far the gesture's midpoint moved.
+            this.offsetX += center.x - this.pinchLastCenter.x;
+            this.offsetY += center.y - this.pinchLastCenter.y;
+            this.pinchLastCenter = center;
+            // Zoom by the change in finger spread, centred on the midpoint.
+            // changeZoom() applies the centring math and re-renders.
+            if (this.pinchStartDist > 0) {
+                const targetZoom = Math.max(0.1, Math.min(5, this.pinchStartZoom * (dist / this.pinchStartDist)));
+                this.changeZoom(targetZoom - this.zoom, center.x, center.y);
+            } else {
+                this.grid.draw();
+                this.render();
+            }
+        }
+    }
+
+    handleTouchEnd(e) {
+        if (this.touchMode === 'draw') {
+            e.preventDefault();
+            if (this.lastTouchPos) {
+                this.handleMouseUp(this.synthMouseFromTouch(this.lastTouchPos));
+            }
+            this.touchMode = null;
+            this.activeTouchId = null;
+        } else if (this.touchMode === 'pinch') {
+            e.preventDefault();
+            // Once a finger lifts, end the gesture. Don't resume drawing with
+            // the remaining finger — require a fresh touch to avoid stray marks.
+            if (e.touches.length < 2) {
+                this.touchMode = null;
+                this.activeTouchId = null;
+            }
+        }
+    }
+
     handleKeyDown(e) {
         if (this.textInput.style.display === 'block') {
             return;
