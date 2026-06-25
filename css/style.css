@@ -6,6 +6,11 @@
     --text-primary: #ffffff;
     --text-secondary: #b0b0b0;
     --accent: #007acc;
+    --accent-hover: #1f8fd6;
+    --bg-hover: #3a3a3a;
+    --danger: #c0392b;
+    --danger-hover: #e74c3c;
+    --focus-ring: #4da3ff;
     --grid-color: #333333;
     --canvas-bg: #1a1a1a;
 }
@@ -152,11 +157,34 @@ canvas {
 }
 
 .control-btn:hover {
-    background: var(--accent);
+    background: var(--bg-hover);
 }
 
 .control-btn.active {
     background: var(--accent);
+    color: #fff;
+}
+
+.control-btn.active:hover {
+    background: var(--accent-hover);
+}
+
+/* #1 — Clear is destructive: keep it visually distinct from neutral actions */
+#clear-btn:hover {
+    background: var(--danger);
+    color: #fff;
+}
+
+/* #3 — Visible keyboard focus for interactive controls */
+.tool-btn:focus-visible,
+.control-btn:focus-visible,
+.style-btn:focus-visible,
+.modal-close:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
 }
 
 /* Zoom Controls */
