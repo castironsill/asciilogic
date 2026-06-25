@@ -104,13 +104,14 @@ body {
 
 /* Top Bar */
 .top-bar {
-    height: 50px;
+    min-height: 50px;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--bg-tertiary);
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    padding: 0 20px;
-    gap: 20px;
+    padding: 6px 20px;
+    gap: 8px 20px;
 }
 
 /* Canvas Container */
@@ -262,7 +263,6 @@ label {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 10px 0;
 }
 
 /* Import dialog textarea. Scoped by id so it doesn't bleed onto the
