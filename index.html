@@ -123,64 +123,64 @@
 <body>
     <div class="app-container">
         <div class="toolbar">
-            <button class="tool-btn active" data-tool="select">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn active" data-tool="select" aria-label="Select tool (V)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
                 </svg>
                 <span class="tooltip">Select (V)</span>
             </button>
-            <button class="tool-btn" data-tool="line">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn" data-tool="line" aria-label="Line tool (L)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <path d="M5 12h14"/>
                 </svg>
                 <span class="tooltip">Line (L)</span>
             </button>
-            <button class="tool-btn" data-tool="arrow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn" data-tool="arrow" aria-label="Arrow tool (A)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <path d="M5 12h14m-7-7l7 7-7 7"/>
                 </svg>
                 <span class="tooltip">Arrow (A)</span>
             </button>
-            <button class="tool-btn" data-tool="box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn" data-tool="box" aria-label="Box tool (B)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <rect x="3" y="3" width="18" height="18"/>
                 </svg>
                 <span class="tooltip">Box (B)</span>
             </button>
-            <button class="tool-btn" data-tool="ellipse">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn" data-tool="ellipse" aria-label="Ellipse tool (C)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <ellipse cx="12" cy="12" rx="9" ry="9"/>
                 </svg>
                 <span class="tooltip">Ellipse (C)</span>
             </button>
-            <button class="tool-btn" data-tool="polyline">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn" data-tool="polyline" aria-label="Polyline tool (P)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <polyline points="3,18 9,8 15,14 21,5"/>
                 </svg>
                 <span class="tooltip">Polyline (P)</span>
             </button>
-            <button class="tool-btn" data-tool="dimension">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn" data-tool="dimension" aria-label="Dimension tool (D)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <path d="M4 7v10M20 7v10M4 12h16"/>
                 </svg>
                 <span class="tooltip">Dimension (D)</span>
             </button>
-            <button class="tool-btn" data-tool="text">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn" data-tool="text" aria-label="Text tool (T)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <path d="M12 3v18m-4-18h8"/>
                 </svg>
                 <span class="tooltip">Text (T)</span>
             </button>
             <div class="divider" style="flex: 1;"></div>
-            <button class="tool-btn" id="undo-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn" id="undo-btn" aria-label="Undo (Ctrl+Z)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <path d="M3 7v6h6"/>
                     <path d="M3 13a9 9 0 1 0 3-7.7L3 7"/>
                 </svg>
                 <span class="tooltip">Undo (Ctrl+Z)</span>
             </button>
-            <button class="tool-btn" id="redo-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="tool-btn" id="redo-btn" aria-label="Redo (Ctrl+Y)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                     <path d="M21 7v6h-6"/>
                     <path d="M21 13a9 9 0 1 1-3-7.7L21 7"/>
                 </svg>
@@ -194,38 +194,27 @@
                 <div class="settings-row">
                     <label for="grid-size">Grid Size:</label>
                     <input type="number" id="grid-size" value="10" min="5" max="50" step="5">
-                    <button id="toggle-grid" class="control-btn active" style="padding: 4px 8px; margin-left: 5px; font-size: 12px;" title="Show / hide grid">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <button id="toggle-grid" class="control-btn active" style="padding: 4px 8px; margin-left: 5px; font-size: 12px;" title="Show / hide grid" aria-label="Show / hide grid" aria-pressed="true">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false">
                             <path d="M3 3h6v6H3zm0 8h6v6H3zm8-8h6v6h-6zm0 8h6v6h-6zM3 21h6v-6H3zm8 0h6v-6h-6zm8-18h-6v6h6zm0 8h-6v6h6zm0 8h-6v-6h6z"/>
                         </svg>
                     </button>
-                    <button id="toggle-snap" class="control-btn active" style="padding: 4px 8px; margin-left: 5px; font-size: 12px;" title="Snap to grid on / off">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <button id="toggle-snap" class="control-btn active" style="padding: 4px 8px; margin-left: 5px; font-size: 12px;" title="Snap to grid on / off" aria-label="Snap to grid on / off" aria-pressed="true">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                             <path d="M3 3v14a4 4 0 0 0 4 4h14"/>
                             <circle cx="17" cy="17" r="3" fill="currentColor" stroke="none"/>
                         </svg>
                     </button>
                 </div>
-                <!-- FIXED: Added for attribute to label -->
-                <div class="settings-row">
+                <div class="settings-row" id="font-settings">
                     <label for="font-size">Font Size:</label>
                     <input type="number" id="font-size" value="16" min="10" max="48" step="2">
                     <span style="font-size: 12px; color: var(--text-secondary);">px</span>
                 </div>
                 <div class="settings-row">
-                    <label for="color-select">Color:</label>
-                    <select id="color-select" class="style-select">
-                        <option value="white">White</option>
-                        <option value="gray">Gray</option>
-                        <option value="red">Red</option>
-                        <option value="blue">Blue</option>
-                        <option value="green">Green</option>
-                        <option value="yellow">Yellow</option>
-                        <option value="cyan">Cyan</option>
-                        <option value="magenta">Magenta</option>
-                    </select>
+                    <span id="color-label" class="settings-label">Color:</span>
+                    <div class="color-swatches" id="color-swatches" role="radiogroup" aria-labelledby="color-label"></div>
                 </div>
-                <!-- END OF FIX -->
                 <!-- Line Style Controls -->
                 <div class="line-style-controls" id="line-style-controls" style="display: none; gap: 8px; margin-left: 20px;">
                     <label style="font-size: 12px; color: var(--text-secondary);">Line Style:</label>
@@ -309,13 +298,13 @@
 
     <!-- Help Modal -->
     <div class="help-modal" id="help-modal">
-        <div class="help-content">
+        <div class="help-content" role="dialog" aria-modal="true" aria-labelledby="help-title" tabindex="-1">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <img src="logo.png" alt="asciilogic logo" style="height: 96px; width: auto;">
-                    <h2 style="margin: 0; color: var(--text-primary); font-size: 24px;">Welcome to asciilogic</h2>
+                    <h2 id="help-title" style="margin: 0; color: var(--text-primary); font-size: 24px;">Welcome to asciilogic</h2>
                 </div>
-                <button class="modal-close" id="close-help">&times;</button>
+                <button class="modal-close" id="close-help" aria-label="Close">&times;</button>
             </div>
             
             <p><strong>asciilogic</strong> is a powerful ASCII diagram tool designed for creating logic diagrams, control schematics, elevator layouts, and technical documentation. Perfect for engineers, developers, and anyone who needs to create clear technical diagrams that can be embedded in code, documentation, or emails.</p>
@@ -407,10 +396,10 @@
 
     <!-- Export Modal -->
     <div class="export-modal" id="export-modal">
-        <div class="modal-content" style="max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="export-title" tabindex="-1" style="max-height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header">
-                <h2>Export Drawing</h2>
-                <button class="modal-close" id="close-modal">&times;</button>
+                <h2 id="export-title">Export Drawing</h2>
+                <button class="modal-close" id="close-modal" aria-label="Close">&times;</button>
             </div>
             
             <div class="export-options">
@@ -498,10 +487,10 @@
 
     <!-- Import Modal -->
     <div class="export-modal" id="import-modal">
-        <div class="modal-content">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="import-title" tabindex="-1">
             <div class="modal-header">
-                <h2>Import ASCII Drawing</h2>
-                <button class="modal-close" id="close-import-modal">&times;</button>
+                <h2 id="import-title">Import ASCII Drawing</h2>
+                <button class="modal-close" id="close-import-modal" aria-label="Close">&times;</button>
             </div>
             
             <p style="margin-bottom: 10px; color: var(--text-secondary);">Paste your ASCII art below:</p>

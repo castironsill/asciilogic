@@ -231,6 +231,63 @@ export class ModalManager {
                 this.hideHelpModal();
             }
         });
+
+        // Esc closes the open modal; Tab is trapped within it.
+        document.addEventListener('keydown', (e) => {
+            const modal = this.getOpenModal();
+            if (!modal) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                this.closeModal(modal);
+            } else if (e.key === 'Tab') {
+                this.trapFocus(e, modal);
+            }
+        });
+    }
+
+    // The currently visible modal, if any.
+    getOpenModal() {
+        for (const id of ['help-modal', 'export-modal', 'import-modal']) {
+            const m = document.getElementById(id);
+            if (m && m.style.display === 'flex') return m;
+        }
+        return null;
+    }
+
+    closeModal(modal) {
+        if (modal.id === 'help-modal') this.hideHelpModal();
+        else if (modal.id === 'export-modal') this.hideExportModal();
+        else if (modal.id === 'import-modal') this.hideImportModal();
+    }
+
+    // Keep keyboard focus inside the open dialog while Tabbing.
+    trapFocus(e, modal) {
+        const focusables = Array.from(modal.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )).filter(el => !el.disabled && el.offsetParent !== null);
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    }
+
+    // Move focus into a dialog on open; remember what to restore on close.
+    focusDialog(modal) {
+        const dialog = modal.querySelector('[role="dialog"]') || modal;
+        if (dialog && typeof dialog.focus === 'function') dialog.focus();
+    }
+
+    restoreFocus() {
+        if (this.lastFocused && typeof this.lastFocused.focus === 'function') {
+            this.lastFocused.focus();
+        }
+        this.lastFocused = null;
     }
     
     // Background / watermark options for PNG and SVG exports.
@@ -302,31 +359,36 @@ export class ModalManager {
     showHelpModal() {
         const modal = document.getElementById('help-modal');
         if (modal) {
+            this.lastFocused = document.activeElement;
             modal.style.display = 'flex';
+            this.focusDialog(modal);
         }
     }
-    
+
     hideHelpModal() {
         const modal = document.getElementById('help-modal');
         if (modal) {
             modal.style.display = 'none';
+            this.restoreFocus();
         }
     }
-    
+
     showImportModal() {
         const modal = document.getElementById('import-modal');
         const textarea = document.getElementById('import-textarea');
         if (modal && textarea) {
+            this.lastFocused = document.activeElement;
             modal.style.display = 'flex';
             textarea.value = '';
             textarea.focus();
         }
     }
-    
+
     hideImportModal() {
         const modal = document.getElementById('import-modal');
         if (modal) {
             modal.style.display = 'none';
+            this.restoreFocus();
         }
     }
     
@@ -336,7 +398,9 @@ export class ModalManager {
         const asciiOptions = document.getElementById('ascii-options');
         
         if (modal && exportPreview) {
+            this.lastFocused = document.activeElement;
             modal.style.display = 'flex';
+            this.focusDialog(modal);
             // Auto-load ASCII Basic preview with no wrappers
             if (this.app.exportManager) {
                 const basicAscii = this.app.exportManager.exportToASCII(false, {}); // false = basic ASCII, {} = no wrappers
@@ -373,6 +437,7 @@ export class ModalManager {
         const modal = document.getElementById('export-modal');
         if (modal) {
             modal.style.display = 'none';
+            this.restoreFocus();
         }
     }
     

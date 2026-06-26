@@ -65,6 +65,10 @@ export class DrawingApp {
         this.setupCanvas();
         this.setupEventListeners();
 
+        // Sync contextual controls (font size, line/box style, color) to the
+        // initial tool/selection so only relevant controls show on load.
+        this.refreshStyleControls();
+
         // Initial render
         this.grid.draw();
         this.history.saveState();
@@ -217,6 +221,7 @@ export class DrawingApp {
                 this.showGrid = !this.showGrid;
                 toggleGridBtn.style.opacity = this.showGrid ? '1' : '0.5';
                 toggleGridBtn.classList.toggle('active', this.showGrid);
+                toggleGridBtn.setAttribute('aria-pressed', String(this.showGrid));
                 this.grid.draw();
             });
         }
@@ -228,6 +233,7 @@ export class DrawingApp {
                 this.snapEnabled = !this.snapEnabled;
                 toggleSnapBtn.style.opacity = this.snapEnabled ? '1' : '0.5';
                 toggleSnapBtn.classList.toggle('active', this.snapEnabled);
+                toggleSnapBtn.setAttribute('aria-pressed', String(this.snapEnabled));
             });
         }
         
@@ -368,6 +374,8 @@ export class DrawingApp {
             this.touchMode = 'draw';
             this.activeTouchId = t.identifier;
             this.lastTouchPos = { clientX: t.clientX, clientY: t.clientY };
+            this.touchStartClient = { x: t.clientX, y: t.clientY };
+            this.touchMovedFar = false;
             this.handleMouseDown(this.synthMouseFromTouch(t));
         } else if (e.touches.length === 2) {
             e.preventDefault();
@@ -391,6 +399,10 @@ export class DrawingApp {
             e.preventDefault();
             const t = Array.from(e.touches).find(t => t.identifier === this.activeTouchId) || e.touches[0];
             this.lastTouchPos = { clientX: t.clientX, clientY: t.clientY };
+            if (this.touchStartClient &&
+                Math.hypot(t.clientX - this.touchStartClient.x, t.clientY - this.touchStartClient.y) > 10) {
+                this.touchMovedFar = true;
+            }
             this.handleMouseMove(this.synthMouseFromTouch(t));
         } else if (this.touchMode === 'pinch' && e.touches.length >= 2) {
             e.preventDefault();
@@ -416,8 +428,28 @@ export class DrawingApp {
     handleTouchEnd(e) {
         if (this.touchMode === 'draw') {
             e.preventDefault();
+            // A tap is a touch that barely moved. Two taps in quick succession
+            // at the same spot count as a double-tap and open the same editor
+            // a desktop double-click would (text / connector label / dimension).
+            let doubleTap = false;
+            if (!this.touchMovedFar && this.lastTouchPos) {
+                const now = e.timeStamp;
+                const near = this.lastTapPos &&
+                    Math.hypot(this.lastTouchPos.clientX - this.lastTapPos.x,
+                               this.lastTouchPos.clientY - this.lastTapPos.y) < 24;
+                if (this.lastTapTime && (now - this.lastTapTime) < 300 && near) {
+                    doubleTap = true;
+                    this.lastTapTime = 0; // consumed — don't chain into a triple-tap
+                } else {
+                    this.lastTapTime = now;
+                    this.lastTapPos = { x: this.lastTouchPos.clientX, y: this.lastTouchPos.clientY };
+                }
+            }
             if (this.lastTouchPos) {
                 this.handleMouseUp(this.synthMouseFromTouch(this.lastTouchPos));
+                if (doubleTap) {
+                    this.handleDoubleClick(this.synthMouseFromTouch(this.lastTouchPos));
+                }
             }
             this.touchMode = null;
             this.activeTouchId = null;
@@ -856,6 +888,13 @@ export class DrawingApp {
         this.boxStyleManager.syncControls(selected, this.currentTool);
         this.lineStyleManager.syncControls(selected, this.currentTool);
         this.colorManager.syncControl(selected);
+
+        // Font size only matters for the text tool or when text is selected.
+        const fontRow = document.getElementById('font-settings');
+        if (fontRow) {
+            const showFont = this.currentTool === 'text' || selected.some(el => el.type === 'text');
+            fontRow.style.display = showFont ? 'flex' : 'none';
+        }
     }
 
     renderSelectionHighlights(ctx) {
