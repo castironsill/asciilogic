@@ -16,6 +16,12 @@ export function shapeBounds(shape) {
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+// The center point of a shape's bounding box.
+export function shapeCenter(shape) {
+    const { minX, minY, maxX, maxY } = shapeBounds(shape);
+    return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+}
+
 // Record where (px,py) sits on the shape as a fraction of its box, so the
 // attachment point stays exactly where the user drew it (and tracks the
 // shape on move/resize). The point is only clamped into the box; it is NOT
@@ -70,6 +76,16 @@ export class Connectors {
                 return el;
             }
         }
+        return null;
+    }
+
+    // If (px,py) is over a shape and within `threshold` of that shape's
+    // center, return the center point to snap to (and the shape); else null.
+    centerSnap(px, py, exclude, threshold) {
+        const shape = this.findShapeAt(px, py, exclude);
+        if (!shape) return null;
+        const c = shapeCenter(shape);
+        if (Math.hypot(px - c.x, py - c.y) <= threshold) return { x: c.x, y: c.y, shape };
         return null;
     }
 

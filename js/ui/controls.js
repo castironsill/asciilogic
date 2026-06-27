@@ -37,6 +37,12 @@ export class ControlsManager {
         document.getElementById('redo-btn').addEventListener('click', () => {
             this.app.history.redo();
         });
+
+        // Z-order
+        const frontBtn = document.getElementById('bring-front');
+        const backBtn = document.getElementById('send-back');
+        if (frontBtn) frontBtn.addEventListener('click', () => this.app.bringToFront());
+        if (backBtn) backBtn.addEventListener('click', () => this.app.sendToBack());
         
         // Grid size (kept at a sane minimum; visibility/snap are separate toggles)
         document.getElementById('grid-size').addEventListener('change', (e) => {

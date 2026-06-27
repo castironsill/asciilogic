@@ -17,7 +17,7 @@ import { LineStyleManager } from './utils/lineStyles.js';
 import { BoxStyleManager } from './utils/boxStyles.js';
 import { ColorManager } from './utils/colorManager.js';
 import { notifications } from './ui/notifications.js';
-import { getElementsBounds, getTextDimensions } from './utils/geometry.js';
+import { getElementsBounds, getTextDimensions, translateElement, reorderForZ } from './utils/geometry.js';
 
 export class DrawingApp {
     constructor() {
@@ -34,6 +34,10 @@ export class DrawingApp {
         // 'dark' (default) or 'light'; set for real by ControlsManager from
         // localStorage. The renderer flips white ink to dark in light mode.
         this.theme = 'dark';
+        // Optional: snap a moved shape's center to other shapes' centerlines.
+        this.alignSnap = false;
+        this.alignGuides = null;   // live centerline guides while dragging
+        this.snapIndicator = null; // center marker while attaching a connector
         this.isDrawing = false;
         this.isPanning = false;
         
@@ -239,6 +243,19 @@ export class DrawingApp {
                 toggleSnapBtn.style.opacity = this.snapEnabled ? '1' : '0.5';
                 toggleSnapBtn.classList.toggle('active', this.snapEnabled);
                 toggleSnapBtn.setAttribute('aria-pressed', String(this.snapEnabled));
+            });
+        }
+
+        // Align-to-shapes toggle: snap a moved shape's center to the
+        // centerlines of other shapes (off by default).
+        const toggleAlignBtn = document.getElementById('toggle-align');
+        if (toggleAlignBtn) {
+            toggleAlignBtn.style.opacity = this.alignSnap ? '1' : '0.5';
+            toggleAlignBtn.addEventListener('click', () => {
+                this.alignSnap = !this.alignSnap;
+                toggleAlignBtn.style.opacity = this.alignSnap ? '1' : '0.5';
+                toggleAlignBtn.classList.toggle('active', this.alignSnap);
+                toggleAlignBtn.setAttribute('aria-pressed', String(this.alignSnap));
             });
         }
         
@@ -496,7 +513,27 @@ export class DrawingApp {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             return;
         }
-        
+
+        const hasSelection = this.selectedElement || this.selectedElements.length > 0;
+
+        // Arrow keys nudge the selection (Shift = a whole grid step).
+        if (hasSelection && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            e.preventDefault();
+            const step = e.shiftKey ? this.gridSize : 1;
+            const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+            const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+            this.nudgeSelection(dx, dy);
+            return;
+        }
+
+        // Z-order: ] brings the selection to the front, [ sends it to the back.
+        if (hasSelection && !e.ctrlKey && !e.metaKey && (e.key === ']' || e.key === '[')) {
+            e.preventDefault();
+            if (e.key === ']') this.bringToFront();
+            else this.sendToBack();
+            return;
+        }
+
         // Copy/Paste handling
         if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
             e.preventDefault();
@@ -703,6 +740,83 @@ export class DrawingApp {
         this.render();
     }
 
+    // The current selection as a flat array (single or multi).
+    selectionList() {
+        if (this.selectedElements.length > 0) return this.selectedElements;
+        return this.selectedElement ? [this.selectedElement] : [];
+    }
+
+    bringToFront() { this.reorderZ('front'); }
+    sendToBack() { this.reorderZ('back'); }
+
+    reorderZ(dir) {
+        const sel = this.selectionList();
+        if (!sel.length) return;
+        this.elements = reorderForZ(this.elements, new Set(sel), dir);
+        this.history.saveState();
+        this.storage.save();
+        this.render();
+    }
+
+    // Move the selection by (dx, dy) in world units (arrow-key nudge).
+    nudgeSelection(dx, dy) {
+        const sel = this.selectionList();
+        if (!sel.length) return;
+        sel.forEach(el => translateElement(el, dx, dy));
+        this.history.saveState();
+        this.storage.save();
+        this.render();
+    }
+
+    // The world-space bounds of the visible canvas (for full-length guides).
+    viewportWorldBounds() {
+        return {
+            left: -this.offsetX / this.zoom,
+            top: -this.offsetY / this.zoom,
+            right: (this.mainCanvas.width - this.offsetX) / this.zoom,
+            bottom: (this.mainCanvas.height - this.offsetY) / this.zoom
+        };
+    }
+
+    // Dashed centerlines shown while a shape snaps to another's center.
+    drawAlignGuides(ctx) {
+        if (!this.alignGuides || !this.alignGuides.length) return;
+        const { left, top, right, bottom } = this.viewportWorldBounds();
+        ctx.save();
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+        ctx.lineWidth = 1 / this.zoom;
+        ctx.setLineDash([5 / this.zoom, 4 / this.zoom]);
+        this.alignGuides.forEach(g => {
+            ctx.beginPath();
+            if (g.type === 'v') { ctx.moveTo(g.x, top); ctx.lineTo(g.x, bottom); }
+            else { ctx.moveTo(left, g.y); ctx.lineTo(right, g.y); }
+            ctx.stroke();
+        });
+        ctx.restore();
+    }
+
+    // A target marker shown when a connector endpoint will snap to a shape center.
+    drawSnapIndicator(ctx) {
+        if (!this.snapIndicator) return;
+        const { x, y } = this.snapIndicator;
+        const r = 6 / this.zoom;
+        ctx.save();
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+        ctx.lineWidth = 1.5 / this.zoom;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x - r, y); ctx.lineTo(x + r, y);
+        ctx.moveTo(x, y - r); ctx.lineTo(x, y + r);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, 1.5 / this.zoom, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
     // Stable unique id used to bind connectors to shapes.
     genId() {
         if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -880,6 +994,10 @@ export class DrawingApp {
         
         // Draw selection highlights
         this.renderSelectionHighlights(ctx);
+
+        // Alignment guides and the connector center marker (live, drag-time).
+        this.drawAlignGuides(ctx);
+        this.drawSnapIndicator(ctx);
 
         ctx.restore();
 

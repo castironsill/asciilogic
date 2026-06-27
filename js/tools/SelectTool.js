@@ -73,6 +73,7 @@ export class SelectTool {
                 } else {
                     this.originalElement = JSON.parse(JSON.stringify(this.app.selectedElement));
                 }
+                this.setupAlignSnap();
                 this.app.mainCanvas.style.cursor = 'move';
             } else if (clickedElement) {
                 this.app.selectElement(x, y);
@@ -145,22 +146,29 @@ export class SelectTool {
             const dy = snappedY - this.app.grid.snapToGrid(this.dragStart.y);
             
             if (this.dragHandle === 'move') {
+                let mdx = dx, mdy = dy;
+                if (this.alignActive) {
+                    const adj = this.applyAlignSnap(dx, dy);
+                    mdx = adj.dx; mdy = adj.dy;
+                }
                 if (this.app.selectedElements.length > 0) {
                     this.app.selectedElements.forEach((el, index) => {
-                        this.moveElement(el, this.originalElements[index], dx, dy);
+                        this.moveElement(el, this.originalElements[index], mdx, mdy);
                     });
                 } else {
-                    this.moveElement(this.app.selectedElement, this.originalElement, dx, dy);
+                    this.moveElement(this.app.selectedElement, this.originalElement, mdx, mdy);
                 }
             } else if (this.dragHandle === 'start') {
-                this.app.selectedElement.startX = snappedX;
-                this.app.selectedElement.startY = snappedY;
+                const p = this.connectorCenterSnap(snappedX, snappedY);
+                this.app.selectedElement.startX = p.x;
+                this.app.selectedElement.startY = p.y;
                 if (this.app.selectedElement.bendX !== undefined) {
                     this.app.recalculateBend(this.app.selectedElement);
                 }
             } else if (this.dragHandle === 'end') {
-                this.app.selectedElement.endX = snappedX;
-                this.app.selectedElement.endY = snappedY;
+                const p = this.connectorCenterSnap(snappedX, snappedY);
+                this.app.selectedElement.endX = p.x;
+                this.app.selectedElement.endY = p.y;
                 if (this.app.selectedElement.bendX !== undefined) {
                     this.app.recalculateBend(this.app.selectedElement);
                 }
@@ -217,10 +225,71 @@ export class SelectTool {
                 this.app.connectors.bindEndpoint(sel, draggedHandle);
             }
 
+            this.alignActive = false;
+            this.app.alignGuides = null;
+            this.app.snapIndicator = null;
+
             this.app.history.saveState();
+            this.app.render();
             this.updateCursor();
             return;
         }
+    }
+
+    // Prepare centerline snapping for a move: only when enabled and every
+    // selected element is a shape (box/ellipse). Caches the moving bounds and
+    // the centers of the other shapes to snap against.
+    setupAlignSnap() {
+        this.alignActive = false;
+        const sel = this.currentSelectionList();
+        if (!this.app.alignSnap || !sel.length) return;
+        if (!sel.every(el => el.type === 'box' || el.type === 'ellipse')) return;
+
+        this.alignActive = true;
+        this.alignOrigBounds = getElementsBounds(sel, this.app.ctx);
+        const movingSet = new Set(sel);
+        this.alignTargets = this.app.elements
+            .filter(el => (el.type === 'box' || el.type === 'ellipse') && !movingSet.has(el))
+            .map(el => ({
+                cx: (Math.min(el.startX, el.endX) + Math.max(el.startX, el.endX)) / 2,
+                cy: (Math.min(el.startY, el.endY) + Math.max(el.startY, el.endY)) / 2
+            }));
+    }
+
+    // Nudge (dx,dy) so the moving selection's center lines up with the nearest
+    // other shape's center on each axis. Records guides for rendering.
+    applyAlignSnap(dx, dy) {
+        const b = this.alignOrigBounds;
+        const cx = (b.minX + b.maxX) / 2 + dx;
+        const cy = (b.minY + b.maxY) / 2 + dy;
+        const thr = 6 / this.app.zoom;
+        let adjX = 0, adjY = 0, gx = null, gy = null, bestX = Infinity, bestY = Infinity;
+        for (const t of this.alignTargets) {
+            const ddx = t.cx - cx;
+            if (Math.abs(ddx) < thr && Math.abs(ddx) < bestX) { bestX = Math.abs(ddx); adjX = ddx; gx = t.cx; }
+            const ddy = t.cy - cy;
+            if (Math.abs(ddy) < thr && Math.abs(ddy) < bestY) { bestY = Math.abs(ddy); adjY = ddy; gy = t.cy; }
+        }
+        const guides = [];
+        if (gx !== null) guides.push({ type: 'v', x: gx });
+        if (gy !== null) guides.push({ type: 'h', y: gy });
+        this.app.alignGuides = guides.length ? guides : null;
+        return { dx: dx + adjX, dy: dy + adjY };
+    }
+
+    // Snap a dragged connector endpoint to a shape's center when close, and
+    // show the center marker. Returns the point to use.
+    connectorCenterSnap(px, py) {
+        const sel = this.app.selectedElement;
+        if (sel && this.app.connectors && this.app.connectors.isConnector(sel)) {
+            const snap = this.app.connectors.centerSnap(px, py, sel, 12 / this.app.zoom);
+            if (snap) {
+                this.app.snapIndicator = { x: snap.x, y: snap.y };
+                return snap;
+            }
+        }
+        this.app.snapIndicator = null;
+        return { x: px, y: py };
     }
     
     // Translate an element by (dx,dy) from its original geometry.

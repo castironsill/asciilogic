@@ -1,3 +1,31 @@
+// Translate one element in place by (dx, dy), covering every geometry shape.
+export function translateElement(el, dx, dy) {
+    if (el.type === 'text') {
+        el.x += dx;
+        el.y += dy;
+    } else if (el.type === 'polyline') {
+        el.points = el.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
+    } else {
+        el.startX += dx;
+        el.startY += dy;
+        el.endX += dx;
+        el.endY += dy;
+        if (el.bendX !== undefined) {
+            el.bendX += dx;
+            el.bendY += dy;
+        }
+    }
+}
+
+// Reorder `elements` for z-ordering: move the selected elements to the front
+// (end of the array, drawn last/on top) or the back (start). Relative order
+// within each group is preserved. Returns a new array.
+export function reorderForZ(elements, selectedSet, dir) {
+    const selected = elements.filter(el => selectedSet.has(el));
+    const rest = elements.filter(el => !selectedSet.has(el));
+    return dir === 'front' ? [...rest, ...selected] : [...selected, ...rest];
+}
+
 export function distanceToLineSegment(px, py, x1, y1, x2, y2) {
     const dx = x2 - x1;
     const dy = y2 - y1;

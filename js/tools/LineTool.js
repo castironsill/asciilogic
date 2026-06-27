@@ -9,10 +9,29 @@ export class LineTool {
         this.elementType = 'line';
     }
 
+    // Lines and arrows attach to shapes; boxes/ellipses (subclasses) do not.
+    isConnectorType() {
+        return this.elementType === 'line' || this.elementType === 'arrow';
+    }
+
+    // Snap a point to a shape's center when close, showing the center marker.
+    centerSnap(px, py) {
+        if (this.isConnectorType() && this.app.connectors) {
+            const snap = this.app.connectors.centerSnap(px, py, null, 12 / this.app.zoom);
+            if (snap) {
+                this.app.snapIndicator = { x: snap.x, y: snap.y };
+                return { x: snap.x, y: snap.y };
+            }
+        }
+        this.app.snapIndicator = null;
+        return { x: px, y: py };
+    }
+
     handleMouseDown(x, y, e) {
         this.isDrawing = true;
-        const snappedX = this.app.grid.snapToGrid(x);
-        const snappedY = this.app.grid.snapToGrid(y);
+        const p = this.centerSnap(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
+        const snappedX = p.x;
+        const snappedY = p.y;
 
         this.tempElement = {
             type: this.elementType,
@@ -22,12 +41,13 @@ export class LineTool {
             endY: snappedY
         };
     }
-    
+
     handleMouseMove(x, y, e) {
         if (this.isDrawing && this.tempElement) {
-            const snappedX = this.app.grid.snapToGrid(x);
-            const snappedY = this.app.grid.snapToGrid(y);
-            
+            const p = this.centerSnap(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
+            const snappedX = p.x;
+            const snappedY = p.y;
+
             const dx = snappedX - this.tempElement.startX;
             const dy = snappedY - this.tempElement.startY;
             
@@ -97,6 +117,7 @@ export class LineTool {
 
             this.tempElement = null;
             this.app.tempElement = null;
+            this.app.snapIndicator = null;
             this.app.render();
         }
     }

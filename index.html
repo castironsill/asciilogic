@@ -187,6 +187,21 @@
                 </svg>
                 <span class="tooltip">Redo (Ctrl+Y)</span>
             </button>
+            <div class="divider" style="flex: 0 0 auto; width: 24px; height: 1px; margin: 8px auto;"></div>
+            <button class="tool-btn" id="bring-front" aria-label="Bring to front (])">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+                    <rect x="4" y="4" width="11" height="11" rx="1"/>
+                    <rect x="9" y="9" width="11" height="11" rx="1" fill="currentColor" stroke="none"/>
+                </svg>
+                <span class="tooltip">Bring to front (])</span>
+            </button>
+            <button class="tool-btn" id="send-back" aria-label="Send to back ([)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+                    <rect x="4" y="4" width="11" height="11" rx="1" fill="currentColor" stroke="none"/>
+                    <rect x="9" y="9" width="11" height="11" rx="1"/>
+                </svg>
+                <span class="tooltip">Send to back ([)</span>
+            </button>
         </div>
         
         <div class="main-area">
@@ -204,6 +219,13 @@
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
                             <path d="M3 3v14a4 4 0 0 0 4 4h14"/>
                             <circle cx="17" cy="17" r="3" fill="currentColor" stroke="none"/>
+                        </svg>
+                    </button>
+                    <button id="toggle-align" class="control-btn" style="padding: 4px 8px; margin-left: 5px; font-size: 12px;" title="Snap shape centers to other shapes" aria-label="Snap shape centers to other shapes" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+                            <line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2"/>
+                            <rect x="5" y="6" width="14" height="4" fill="currentColor" stroke="none"/>
+                            <rect x="7" y="14" width="10" height="4" fill="currentColor" stroke="none"/>
                         </svg>
                     </button>
                 </div>
@@ -324,7 +346,7 @@
             <h2>Tools</h2>
             <ul>
                 <li><strong>Select</strong> <kbd>V</kbd> — Click an element to pick it, drag to move it. Drag an empty area to box-select several.</li>
-                <li><strong>Line</strong> <kbd>L</kbd> — Click and drag. Lines snap to horizontal, vertical, or a single 90° bend. Finish on a box or circle and the line stays attached when you move or resize that shape.</li>
+                <li><strong>Line</strong> <kbd>L</kbd> — Click and drag. Lines snap to horizontal, vertical, or a single 90° bend. Finish on a box or circle and the line stays attached when you move or resize that shape. Near a shape's center a marker appears and the end snaps to the exact center.</li>
                 <li><strong>Arrow</strong> <kbd>A</kbd> — Same as Line, with an arrowhead.</li>
                 <li><strong>Box</strong> <kbd>B</kbd> — Drag to draw a rectangle, then drag its handles to resize.</li>
                 <li><strong>Ellipse</strong> <kbd>C</kbd> — Drag to draw a circle or ellipse. Same fills and handles as a box.</li>
@@ -339,6 +361,8 @@
                 <li>Add or remove with <kbd>Shift</kbd>/<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + click. Hold the same key while box-dragging to add to the current selection.</li>
                 <li>Resize a box or circle by dragging its handles. Resize a whole group by selecting two or more elements and dragging a corner of the group box — everything scales together, text included.</li>
                 <li>Double-click a line or arrow to add a label along it.</li>
+                <li>Nudge the selection with the <strong>arrow keys</strong> (hold <kbd>Shift</kbd> to move a whole grid step).</li>
+                <li>Change stacking order: <kbd>]</kbd> brings the selection to the front, <kbd>[</kbd> sends it to the back (or use the two buttons below undo/redo).</li>
                 <li>Press <kbd>Delete</kbd> to remove the selection.</li>
             </ul>
 
@@ -365,6 +389,7 @@
             <h2>Canvas: grid, zoom, and panning</h2>
             <ul>
                 <li><strong>Grid size</strong> sets the snap spacing (5–50 px). The two buttons beside it toggle the grid's visibility and snapping separately, so you can snap to a hidden grid or draw freely over a visible one.</li>
+                <li><strong>Align to shapes</strong> (the third toggle by Grid size) snaps a moved box or circle so its center lines up with another shape's center, showing a guide line. Handy for lining up boxes of different sizes.</li>
                 <li><strong>Zoom</strong> with the mouse wheel or the +/− buttons; <strong>pan</strong> with the middle mouse button or <kbd>Shift</kbd>+drag. <strong>Fit Content</strong> zooms to show the whole drawing.</li>
                 <li><strong>Touch:</strong> one finger draws or drags, two fingers pinch to zoom and pan, and a double-tap edits text.</li>
             </ul>
