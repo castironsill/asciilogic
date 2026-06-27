@@ -1,3 +1,5 @@
+import { getElementsBounds } from '../utils/geometry.js';
+
 export class SelectTool {
     static RESIZE_HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
@@ -18,6 +20,21 @@ export class SelectTool {
         // With a selection modifier held, never grab a resize handle —
         // the click is meant to add/remove from the selection.
         const modifier = e && (e.shiftKey || e.ctrlKey || e.metaKey);
+
+        // A corner handle of a multi-element selection: start a group resize.
+        const groupHandle = modifier ? null : this.app.getGroupHandleAt(x, y);
+        if (groupHandle) {
+            this.isDragging = true;
+            this.dragHandle = groupHandle.type;
+            this.dragStart = { x, y };
+            this.groupBounds = getElementsBounds(this.app.selectedElements, this.app.ctx);
+            this.originalElements = this.app.selectedElements.map(el =>
+                JSON.parse(JSON.stringify(el))
+            );
+            this.updateCursor(groupHandle.type);
+            return;
+        }
+
         const handle = modifier ? null : this.app.getHandleAt(x, y);
         if (handle) {
             this.isDragging = true;
@@ -152,6 +169,9 @@ export class SelectTool {
                 this.app.selectedElement.bendY = snappedY;
             } else if (SelectTool.RESIZE_HANDLES.includes(this.dragHandle)) {
                 this.resizeBox(this.dragHandle, snappedX, snappedY);
+            } else if (this.dragHandle && this.dragHandle.startsWith('group-')) {
+                // Use raw (unsnapped) coords for smooth proportional scaling.
+                this.scaleGroup(this.dragHandle, x, y);
             }
 
             this.app.render();
@@ -159,7 +179,7 @@ export class SelectTool {
         }
 
         if (!this.isDragging && !this.isSelecting) {
-            const handle = this.app.getHandleAt(x, y);
+            const handle = this.app.getHandleAt(x, y) || this.app.getGroupHandleAt(x, y);
             if (handle) {
                 this.updateCursor(handle.type);
             } else if (this.app.getElementAt(x, y)) {
@@ -246,13 +266,67 @@ export class SelectTool {
         el.endY = Math.max(minY, maxY);
     }
 
+    // Proportionally scale the whole selection about the corner opposite the
+    // dragged handle. The factor follows the pointer's projection along the
+    // bounding box's diagonal, so corner dragging feels natural.
+    scaleGroup(handle, x, y) {
+        const b = this.groupBounds;
+        if (!b) return;
+        const anchors = {
+            'group-nw': { x: b.maxX, y: b.maxY },
+            'group-ne': { x: b.minX, y: b.maxY },
+            'group-se': { x: b.minX, y: b.minY },
+            'group-sw': { x: b.maxX, y: b.minY }
+        };
+        const corners = {
+            'group-nw': { x: b.minX, y: b.minY },
+            'group-ne': { x: b.maxX, y: b.minY },
+            'group-se': { x: b.maxX, y: b.maxY },
+            'group-sw': { x: b.minX, y: b.maxY }
+        };
+        const a = anchors[handle], c = corners[handle];
+        const ox = c.x - a.x, oy = c.y - a.y;
+        const denom = ox * ox + oy * oy;
+        if (denom === 0) return;
+        let s = ((x - a.x) * ox + (y - a.y) * oy) / denom;
+        s = Math.max(0.05, s);
+
+        this.app.selectedElements.forEach((el, i) => {
+            this.scaleElement(el, this.originalElements[i], s, a.x, a.y);
+        });
+    }
+
+    // Scale one element about (ax, ay) by factor s, from its original geometry.
+    scaleElement(el, o, s, ax, ay) {
+        const sx = (v) => ax + (v - ax) * s;
+        const sy = (v) => ay + (v - ay) * s;
+        if (el.type === 'text') {
+            el.x = sx(o.x);
+            el.y = sy(o.y);
+            el.fontSize = Math.max(4, (o.fontSize || 16) * s);
+        } else if (el.type === 'polyline') {
+            el.points = o.points.map(p => ({ x: sx(p.x), y: sy(p.y) }));
+        } else {
+            el.startX = sx(o.startX);
+            el.startY = sy(o.startY);
+            el.endX = sx(o.endX);
+            el.endY = sy(o.endY);
+            if (o.bendX !== undefined) {
+                el.bendX = sx(o.bendX);
+                el.bendY = sy(o.bendY);
+            }
+        }
+    }
+
     updateCursor(handleType) {
         const cursors = {
             start: 'pointer', end: 'pointer', bend: 'pointer', move: 'move',
             nw: 'nwse-resize', se: 'nwse-resize',
             ne: 'nesw-resize', sw: 'nesw-resize',
             n: 'ns-resize', s: 'ns-resize',
-            e: 'ew-resize', w: 'ew-resize'
+            e: 'ew-resize', w: 'ew-resize',
+            'group-nw': 'nwse-resize', 'group-se': 'nwse-resize',
+            'group-ne': 'nesw-resize', 'group-sw': 'nesw-resize'
         };
         this.app.mainCanvas.style.cursor = cursors[handleType] || 'default';
     }

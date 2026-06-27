@@ -51,6 +51,17 @@ describe('parseDxf', () => {
     expect(primitives[0]).toMatchObject({ kind: 'text', x: 1, y: 2, height: 5, text: 'V1' });
   });
 
+  it('approximates a SPLINE from its fit points', () => {
+    const { primitives } = parseDxf(dxfDoc([
+      [[0, 'SPLINE'], [70, '8'],
+       [11, '0'], [21, '0'], [11, '5'], [21, '10'], [11, '10'], [21, '0']]
+    ]));
+    expect(primitives[0]).toMatchObject({ kind: 'polyline' });
+    expect(primitives[0].points).toEqual([
+      { x: 0, y: 0 }, { x: 5, y: 10 }, { x: 10, y: 0 }
+    ]);
+  });
+
   it('records unsupported entities in stats instead of throwing', () => {
     const { primitives, stats } = parseDxf(dxfDoc([
       [[0, 'SPLINE'], [10, '0'], [20, '0']]

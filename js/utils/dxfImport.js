@@ -163,6 +163,26 @@ function parseOneEntity(pairs, idx, out, blocks, stats, depth) {
             break;
         }
 
+        case 'SPLINE': {
+            // Approximate a spline by its fit points (which lie on the curve);
+            // fall back to control points if no fit points are present.
+            const fit = [], ctrl = [];
+            let cf = null, cc = null;
+            for (const c of codes) {
+                if (c.code === 11) { if (cf) fit.push(cf); cf = { x: parseFloat(c.value), y: 0 }; }
+                else if (c.code === 21 && cf) { cf.y = parseFloat(c.value); }
+                else if (c.code === 10) { if (cc) ctrl.push(cc); cc = { x: parseFloat(c.value), y: 0 }; }
+                else if (c.code === 20 && cc) { cc.y = parseFloat(c.value); }
+            }
+            if (cf) fit.push(cf);
+            if (cc) ctrl.push(cc);
+            const pts = fit.length >= 2 ? fit : ctrl;
+            const closed = (numVal(codes, 70, 0) & 1) === 1;
+            if (pts.length >= 2) out.push({ kind: 'polyline', points: pts, closed, color });
+            else stats.skipped.SPLINE = (stats.skipped.SPLINE || 0) + 1;
+            break;
+        }
+
         case 'TEXT': {
             const txt = findVal(codes, 1) || '';
             if (txt) out.push({
@@ -502,11 +522,16 @@ export class DxfImporter {
         });
 
         // Switch to the Select tool and select the imported elements so they can
-        // be moved as a group right away.
+        // be moved (and group-resized) right away.
         const selectBtn = document.querySelector('.tool-btn[data-tool="select"]');
         if (selectBtn) selectBtn.click();
-        this.app.selectedElements = elements;
-        this.app.selectedElement = elements.length === 1 ? elements[0] : null;
+        if (elements.length === 1) {
+            this.app.selectedElement = elements[0];
+            this.app.selectedElements = [];
+        } else {
+            this.app.selectedElement = null;
+            this.app.selectedElements = elements;
+        }
 
         this.app.history.saveState();
         this.app.storage.save();

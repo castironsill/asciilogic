@@ -1,6 +1,6 @@
 // js/core/selection.js - Hit-testing and selection helpers
 
-import { isPointNearElement, getNormalizedBox, isElementInBox } from '../utils/geometry.js';
+import { isPointNearElement, getNormalizedBox, isElementInBox, getElementsBounds } from '../utils/geometry.js';
 
 export class Selection {
     constructor(app) {
@@ -62,6 +62,26 @@ export class Selection {
             }
         }
 
+        return null;
+    }
+
+    // Corner handle of a multi-element selection's bounding box under (x, y),
+    // for proportional group scaling. Returns { type: 'group-nw' | ... } or null.
+    getGroupHandleAt(x, y) {
+        const sel = this.app.selectedElements;
+        if (!sel || sel.length < 2) return null;
+        const b = getElementsBounds(sel, this.app.ctx);
+        if (!b) return null;
+        const t = 10 / this.app.zoom;
+        const corners = [
+            { name: 'group-nw', x: b.minX, y: b.minY },
+            { name: 'group-ne', x: b.maxX, y: b.minY },
+            { name: 'group-se', x: b.maxX, y: b.maxY },
+            { name: 'group-sw', x: b.minX, y: b.maxY }
+        ];
+        for (const c of corners) {
+            if (Math.abs(x - c.x) < t && Math.abs(y - c.y) < t) return { type: c.name };
+        }
         return null;
     }
 

@@ -656,6 +656,10 @@ export class DrawingApp {
         return this.selection.getHandleAt(x, y);
     }
 
+    getGroupHandleAt(x, y) {
+        return this.selection.getGroupHandleAt(x, y);
+    }
+
     getNormalizedBox(box) {
         return this.selection.getNormalizedBox(box);
     }
@@ -940,6 +944,26 @@ export class DrawingApp {
                     ctx.setLineDash([]);
                 }
             });
+
+            // For a multi-element selection, frame the whole group and draw
+            // corner handles for proportional resizing.
+            if (this.selectedElements.length >= 2) {
+                const b = getElementsBounds(this.selectedElements, ctx);
+                if (b) {
+                    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent');
+                    ctx.save();
+                    ctx.strokeStyle = accent;
+                    ctx.fillStyle = accent;
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([4, 4]);
+                    ctx.strokeRect(b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY);
+                    ctx.setLineDash([]);
+                    const hs = 8;
+                    [[b.minX, b.minY], [b.maxX, b.minY], [b.maxX, b.maxY], [b.minX, b.maxY]]
+                        .forEach(([hx, hy]) => ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs));
+                    ctx.restore();
+                }
+            }
         }
         else if (this.selectedElement) {
             ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
