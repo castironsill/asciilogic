@@ -1,5 +1,7 @@
 // js/ui/controls.js - UI controls (zoom, pan, etc.)
 
+import { notifications } from './notifications.js';
+
 export class ControlsManager {
     constructor(app) {
         this.app = app;
@@ -64,6 +66,27 @@ export class ControlsManager {
         document.getElementById('import-btn').addEventListener('click', () => {
             this.app.modalManager.showImportModal();
         });
+
+        // Import DXF: open a file picker, then parse the chosen file.
+        const dxfBtn = document.getElementById('import-dxf-btn');
+        const dxfInput = document.getElementById('dxf-file-input');
+        if (dxfBtn && dxfInput) {
+            dxfBtn.addEventListener('click', () => dxfInput.click());
+            dxfInput.addEventListener('change', (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                if (/\.dwg$/i.test(file.name)) {
+                    notifications.show('DWG isn’t supported — convert it to DXF first (e.g. LibreCAD or the free ODA File Converter)', 6000);
+                    dxfInput.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => this.app.importDXF(String(reader.result));
+                reader.onerror = () => notifications.show('Could not read that file');
+                reader.readAsText(file);
+                dxfInput.value = ''; // allow re-importing the same file
+            });
+        }
         
         // Help button
         document.getElementById('help-btn').addEventListener('click', () => {

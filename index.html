@@ -44,7 +44,8 @@
         "Connectors that stay attached to shapes",
         "Not-to-scale dimension lines",
         "Export to ASCII, Unicode, PNG, SVG, and DXF",
-        "Import existing ASCII art"
+        "Import existing ASCII art",
+        "Import DXF drawings and symbols"
       ],
       "offers": {
         "@type": "Offer",
@@ -269,6 +270,8 @@
                 </div>
                 <button class="control-btn" id="help-btn">Help</button>
                 <button class="control-btn" id="import-btn">Import ASCII</button>
+                <button class="control-btn" id="import-dxf-btn">Import DXF</button>
+                <input type="file" id="dxf-file-input" accept=".dxf,.dwg" style="display: none;" aria-hidden="true">
                 <button class="control-btn" id="export-btn">Export</button>
                 <button class="control-btn" id="clear-btn">Clear</button>
                 <a href="https://github.com/castironsill/asciilogic" target="_blank" rel="noopener" class="control-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
@@ -346,6 +349,7 @@
 
             <h3>Import & Export</h3>
             <p>Import existing ASCII diagrams from other tools or export your creations in multiple formats: ASCII Basic or Extended (Unicode), PNG images, SVG vector graphics, or DXF for CAD software. Perfect for embedding in source code, markdown documentation, presentations, or technical drawings.</p>
+            <p><strong>Import DXF</strong> brings in simple CAD drawings and symbols (e.g. a valve) so you can build flowcharts around them. Supported entities: lines, polylines, circles, arcs, ellipses, text, and blocks (inserts). Imported elements are selected so you can move them into place immediately. <strong>DWG is not supported directly</strong> — convert it to DXF first with free tools such as LibreCAD or the ODA File Converter.</p>
 
             <h3>Grid &amp; Snapping</h3>
             <p>Elements snap to a configurable grid for clean, aligned diagrams (grid size 5–50 pixels). The two buttons next to Grid Size toggle grid <em>visibility</em> and <em>snapping</em> independently — you can hide the grid while still snapping, or show it while drawing freely.</p>

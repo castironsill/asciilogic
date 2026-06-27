@@ -4,6 +4,7 @@ import { SelectTool, LineTool, TextTool, ArrowTool, BoxTool, EllipseTool, Dimens
 import { Grid } from './utils/grid.js';
 import { ExportManager } from './utils/export.js';
 import { AsciiImporter } from './utils/asciiImport.js';
+import { DxfImporter } from './utils/dxfImport.js';
 import { Clipboard } from './core/clipboard.js';
 import { Selection } from './core/selection.js';
 import { Connectors } from './core/connectors.js';
@@ -122,6 +123,7 @@ export class DrawingApp {
         this.grid = new Grid(this);
         this.exportManager = new ExportManager(this);
         this.asciiImporter = new AsciiImporter(this);
+        this.dxfImporter = new DxfImporter(this);
         this.clipboardManager = new Clipboard(this);
         this.selection = new Selection(this);
         this.connectors = new Connectors(this);
@@ -1010,6 +1012,10 @@ export class DrawingApp {
     
     importASCII(text) {
         this.asciiImporter.import(text);
+    }
+
+    importDXF(text) {
+        this.dxfImporter.import(text);
     }
     
     // Clipboard operations are delegated to the Clipboard module.

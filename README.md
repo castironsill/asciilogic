@@ -23,6 +23,8 @@ Live: https://asciilogic.com
   selection together.
 - Copy/paste/duplicate, undo/redo, and autosave to the browser.
 - Import existing ASCII art back into editable elements.
+- Import DXF (CAD) drawings and symbols — lines, polylines, circles, arcs,
+  ellipses, text, and blocks. (DWG isn't supported; convert it to DXF first.)
 - Export to ASCII (plain or Unicode box-drawing), PNG, SVG, or DXF, with a
   dark, white, or transparent background and an optional watermark.
 
