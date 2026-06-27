@@ -17,6 +17,7 @@ Live: https://asciilogic.com
 - Box and ellipse fills: none, solid, or hatch patterns (diagonal,
   crosshatch, horizontal, vertical, dots).
 - One color control that applies to any element type.
+- Light or dark editor theme (toggle in the top bar; remembered between visits).
 - Multi-line text with adjustable font size.
 - Resize handles for boxes and circles.
 - Multi-select by drag-box or Shift/Ctrl/Cmd+click; move or restyle the

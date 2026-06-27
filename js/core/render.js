@@ -14,9 +14,15 @@ export class Renderer {
     drawElement(ctx, element, isTemp = false, ink = null, panelBg = null) {
         ctx.save();
 
-        const color = isTemp
+        const lightCanvas = !ink && this.app && this.app.theme === 'light';
+        let color = isTemp
             ? '#888888'
             : (element.color || ink || getComputedStyle(document.documentElement).getPropertyValue('--text-primary'));
+        // On a light canvas, white "ink" (the dark-theme default) would vanish —
+        // flip it to dark, mirroring the export behaviour. Picked colours stay.
+        if (!isTemp && lightCanvas && /^\s*(#fff(fff)?|white)\s*$/i.test(color)) {
+            color = '#1a1a1a';
+        }
         ctx.strokeStyle = color;
         ctx.fillStyle = color;
         ctx.lineWidth = 2;

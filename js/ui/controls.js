@@ -92,6 +92,34 @@ export class ControlsManager {
         document.getElementById('help-btn').addEventListener('click', () => {
             this.app.modalManager.showHelpModal();
         });
+
+        this.setupThemeToggle();
+    }
+
+    setupThemeToggle() {
+        const toggle = document.getElementById('theme-toggle');
+        const apply = (theme, rerender) => {
+            document.documentElement.setAttribute('data-theme', theme);
+            this.app.theme = theme;
+            if (toggle) toggle.setAttribute('aria-pressed', String(theme === 'light'));
+            if (rerender && this.app.grid) {
+                this.app.grid.draw();
+                this.app.render();
+            }
+        };
+
+        // Restore the saved preference (applied before the first render).
+        let saved = 'dark';
+        try { saved = localStorage.getItem('asciilogic-theme') || 'dark'; } catch {}
+        apply(saved, false);
+
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                const next = this.app.theme === 'light' ? 'dark' : 'light';
+                try { localStorage.setItem('asciilogic-theme', next); } catch {}
+                apply(next, true);
+            });
+        }
     }
     
     updateZoomDisplay() {

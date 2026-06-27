@@ -31,6 +31,9 @@ export class DrawingApp {
         this.offsetY = 0;
         this.currentTool = 'select';
         this.fontSize = 16;
+        // 'dark' (default) or 'light'; set for real by ControlsManager from
+        // localStorage. The renderer flips white ink to dark in light mode.
+        this.theme = 'dark';
         this.isDrawing = false;
         this.isPanning = false;
         
@@ -900,6 +903,14 @@ export class DrawingApp {
         if (fontRow) {
             const showFont = this.currentTool === 'text' || selected.some(el => el.type === 'text');
             fontRow.style.display = showFont ? 'flex' : 'none';
+        }
+
+        // Colour applies when drawing (any tool but Select) or editing a
+        // selection — hidden in the idle Select-with-nothing state to declutter.
+        const colorRow = document.getElementById('color-settings');
+        if (colorRow) {
+            const showColor = this.currentTool !== 'select' || selected.length > 0;
+            colorRow.style.display = showColor ? 'flex' : 'none';
         }
     }
 

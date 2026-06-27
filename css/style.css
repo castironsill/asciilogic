@@ -15,6 +15,30 @@
     --canvas-bg: #1a1a1a;
 }
 
+/* Light / print theme — overrides the tokens; the canvas renderer flips white
+   ink to dark so existing drawings stay visible. */
+:root[data-theme="light"] {
+    --bg-primary: #f4f4f5;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #e6e6e8;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555555;
+    --accent: #0a66c2;
+    --accent-hover: #1f7fd6;
+    --bg-hover: #d8d8dc;
+    --danger: #c0392b;
+    --danger-hover: #e74c3c;
+    --focus-ring: #0a66c2;
+    --grid-color: #d6d6da;
+    --canvas-bg: #ffffff;
+}
+
+/* Theme toggle shows the icon of the current mode. */
+#theme-toggle .icon-sun { display: none; }
+#theme-toggle .icon-moon { display: inline-flex; }
+:root[data-theme="light"] #theme-toggle .icon-moon { display: none; }
+:root[data-theme="light"] #theme-toggle .icon-sun { display: inline-flex; }
+
 /* Reset and Base Styles */
 * {
     margin: 0;

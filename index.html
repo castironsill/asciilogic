@@ -212,7 +212,7 @@
                     <input type="number" id="font-size" value="16" min="10" max="48" step="2">
                     <span style="font-size: 12px; color: var(--text-secondary);">px</span>
                 </div>
-                <div class="settings-row">
+                <div class="settings-row" id="color-settings">
                     <span id="color-label" class="settings-label">Color:</span>
                     <div class="color-swatches" id="color-swatches" role="radiogroup" aria-labelledby="color-label"></div>
                 </div>
@@ -268,6 +268,15 @@
                     </select>
                     
                 </div>
+                <button class="control-btn" id="theme-toggle" title="Toggle light / dark theme" aria-label="Toggle light or dark theme" aria-pressed="false">
+                    <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+                        <circle cx="12" cy="12" r="4"/>
+                        <path d="M12 2v2m0 16v2M2 12h2m16 0h2m-3.5-6.5l-1.5 1.5m-9 9l-1.5 1.5m0-12l1.5 1.5m9 9l1.5 1.5"/>
+                    </svg>
+                </button>
                 <button class="control-btn" id="help-btn">Help</button>
                 <button class="control-btn" id="import-btn">Import ASCII</button>
                 <button class="control-btn" id="import-dxf-btn">Import DXF</button>
@@ -388,6 +397,7 @@
                 <li>Export to ASCII Extended for cleaner box-drawing characters</li>
                 <li>Export to SVG for scalable graphics that look perfect at any size</li>
                 <li>Use the grid and snap toggles (next to Grid Size) to hide the grid or draw without snapping — they work independently</li>
+                <li>Toggle the light/dark theme with the sun/moon button in the top bar — your choice is remembered, and white elements stay visible by switching to dark ink on a light canvas</li>
                 <li>The tool saves your work in browser memory - clear cache carefully!</li>
             </ul>
 
