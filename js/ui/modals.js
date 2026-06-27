@@ -331,7 +331,7 @@ export class ModalManager {
         
         // If no elements, show a message
         if (this.app.elements.length === 0) {
-            ctx.fillStyle = '#666';
+            ctx.fillStyle = '#999';
             ctx.font = '14px monospace';
             ctx.textAlign = 'center';
             ctx.fillText('No content to preview', canvas.width / 2, canvas.height / 2);

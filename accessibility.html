@@ -92,7 +92,10 @@
             <li>Toggle buttons expose their on/off state (<code>aria-pressed</code>).</li>
             <li>Dialogs (Help, Export, Import) use proper dialog semantics, can be closed with <kbd>Esc</kbd>, move focus into the dialog when opened and restore it on close, and keep keyboard focus within the dialog while open.</li>
             <li>Clearly visible keyboard focus indicators on buttons, inputs, and controls.</li>
-            <li>Colour is chosen from labelled swatches, so colour names are conveyed to assistive technology rather than relying on sight alone.</li>
+            <li>Colour is chosen from labelled swatches (colour names are conveyed to assistive technology, not by sight alone) that follow the standard radio-group keyboard pattern — arrow keys move through and select colours.</li>
+            <li>Status messages are announced to screen readers through a live region.</li>
+            <li>Placeholder and secondary text meet WCAG AA contrast against their backgrounds.</li>
+            <li>The operating-system "reduce motion" preference is honoured.</li>
             <li>A responsive layout with touch support and enlarged touch targets on touch devices.</li>
             <li>Only the controls relevant to the current tool or selection are shown, reducing clutter.</li>
         </ul>
@@ -102,7 +105,6 @@
         <ul>
             <li><strong>The drawing canvas is not operable by keyboard or screen reader.</strong> Creating, selecting, and moving diagram elements currently requires a mouse or touch. This is an inherent challenge for a freeform visual canvas, and we have not yet built a non-pointer alternative.</li>
             <li><strong>Diagram content has no automatic text alternative on the canvas.</strong> However, the <em>Export to ASCII</em> feature produces a plain-text version of your diagram that screen readers can read, which can serve as a text alternative.</li>
-            <li>The colour swatches do not yet support arrow-key navigation within the group.</li>
             <li>We have not yet completed a formal third-party audit or a full manual screen-reader pass; these are planned.</li>
         </ul>
 

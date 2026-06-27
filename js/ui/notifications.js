@@ -3,14 +3,34 @@
 export class NotificationManager {
     constructor() {
         this.addStyles();
+        this.liveRegion = this.createLiveRegion();
     }
-    
+
+    // A persistent, visually-hidden polite live region so screen readers
+    // announce notifications (the visual toast alone is not announced).
+    createLiveRegion() {
+        let region = document.getElementById('app-live-region');
+        if (!region) {
+            region = document.createElement('div');
+            region.id = 'app-live-region';
+            region.setAttribute('role', 'status');
+            region.setAttribute('aria-live', 'polite');
+            region.setAttribute('aria-atomic', 'true');
+            region.className = 'visually-hidden';
+            document.body.appendChild(region);
+        }
+        return region;
+    }
+
     show(message, duration = 3000) {
+        // Announce to assistive technology.
+        if (this.liveRegion) this.liveRegion.textContent = message;
+
         // Create notification element
         const notification = document.createElement('div');
         notification.className = 'app-notification';
         notification.textContent = message;
-        
+
         // Add to document
         document.body.appendChild(notification);
         
