@@ -22,6 +22,21 @@ export function shapeCenter(shape) {
     return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
 }
 
+// The common connection points of a shape: its center plus the midpoint of
+// each edge (top, right, bottom, left).
+export function shapeAnchors(shape) {
+    const { minX, minY, maxX, maxY } = shapeBounds(shape);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    return [
+        { x: cx, y: cy, kind: 'center' },
+        { x: cx, y: minY, kind: 'top' },
+        { x: maxX, y: cy, kind: 'right' },
+        { x: cx, y: maxY, kind: 'bottom' },
+        { x: minX, y: cy, kind: 'left' }
+    ];
+}
+
 // Record where (px,py) sits on the shape as a fraction of its box, so the
 // attachment point stays exactly where the user drew it (and tracks the
 // shape on move/resize). The point is only clamped into the box; it is NOT
@@ -87,6 +102,28 @@ export class Connectors {
         const c = shapeCenter(shape);
         if (Math.hypot(px - c.x, py - c.y) <= threshold) return { x: c.x, y: c.y, shape };
         return null;
+    }
+
+    // Nearest connection point (shape center or an edge midpoint) within
+    // `threshold` of (px,py), across all shapes. Unlike centerSnap this also
+    // matches points just outside the border, so you can snap to an edge
+    // midpoint while approaching from outside. Returns { x, y, kind, shape }
+    // or null.
+    anchorSnap(px, py, exclude, threshold) {
+        let best = null;
+        let bestD = threshold;
+        for (let i = this.app.elements.length - 1; i >= 0; i--) {
+            const el = this.app.elements[i];
+            if (el === exclude || !this.isShape(el)) continue;
+            for (const a of shapeAnchors(el)) {
+                const d = Math.hypot(px - a.x, py - a.y);
+                if (d <= bestD) {
+                    bestD = d;
+                    best = { x: a.x, y: a.y, kind: a.kind, shape: el };
+                }
+            }
+        }
+        return best;
     }
 
     // Bind or unbind one end of a connector based on where that end lands,

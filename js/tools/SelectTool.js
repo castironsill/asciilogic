@@ -277,12 +277,12 @@ export class SelectTool {
         return { dx: dx + adjX, dy: dy + adjY };
     }
 
-    // Snap a dragged connector endpoint to a shape's center when close, and
-    // show the center marker. Returns the point to use.
+    // Snap a dragged connector endpoint (start or end) to a shape's nearest
+    // connection point — center or an edge midpoint — and show the marker.
     connectorCenterSnap(px, py) {
         const sel = this.app.selectedElement;
         if (sel && this.app.connectors && this.app.connectors.isConnector(sel)) {
-            const snap = this.app.connectors.centerSnap(px, py, sel, 12 / this.app.zoom);
+            const snap = this.app.connectors.anchorSnap(px, py, sel, 12 / this.app.zoom);
             if (snap) {
                 this.app.snapIndicator = { x: snap.x, y: snap.y };
                 return snap;

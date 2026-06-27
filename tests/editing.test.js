@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { translateElement, reorderForZ } from '../js/utils/geometry.js';
-import { Connectors, shapeCenter } from '../js/core/connectors.js';
+import { Connectors, shapeCenter, shapeAnchors } from '../js/core/connectors.js';
 
 describe('translateElement', () => {
   it('moves a line and its bend', () => {
@@ -54,5 +54,29 @@ describe('connector center snap', () => {
 
   it('does not snap when not over any shape', () => {
     expect(connectors.centerSnap(500, 500, null, 12)).toBeNull();
+  });
+
+  it('exposes center and four edge midpoints as anchors', () => {
+    expect(shapeAnchors(box)).toEqual([
+      { x: 50, y: 50, kind: 'center' },
+      { x: 50, y: 0, kind: 'top' },
+      { x: 100, y: 50, kind: 'right' },
+      { x: 50, y: 100, kind: 'bottom' },
+      { x: 0, y: 50, kind: 'left' }
+    ]);
+  });
+
+  it('anchorSnap snaps to the nearest edge midpoint', () => {
+    expect(connectors.anchorSnap(52, 2, null, 12)).toMatchObject({ x: 50, y: 0, kind: 'top' });
+    expect(connectors.anchorSnap(98, 52, null, 12)).toMatchObject({ x: 100, y: 50, kind: 'right' });
+  });
+
+  it('anchorSnap matches an edge midpoint from just outside the border', () => {
+    // 6px below the bottom edge midpoint (50,100) — outside the box.
+    expect(connectors.anchorSnap(50, 106, null, 12)).toMatchObject({ x: 50, y: 100, kind: 'bottom' });
+  });
+
+  it('anchorSnap returns null when no anchor is within range', () => {
+    expect(connectors.anchorSnap(30, 30, null, 12)).toBeNull();
   });
 });

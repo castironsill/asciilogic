@@ -14,10 +14,12 @@ export class LineTool {
         return this.elementType === 'line' || this.elementType === 'arrow';
     }
 
-    // Snap a point to a shape's center when close, showing the center marker.
-    centerSnap(px, py) {
+    // Snap a point to a shape's nearest connection point (center or edge
+    // midpoint) when close, showing the marker. Applies to both the start and
+    // the end of a connector.
+    anchorSnap(px, py) {
         if (this.isConnectorType() && this.app.connectors) {
-            const snap = this.app.connectors.centerSnap(px, py, null, 12 / this.app.zoom);
+            const snap = this.app.connectors.anchorSnap(px, py, null, 12 / this.app.zoom);
             if (snap) {
                 this.app.snapIndicator = { x: snap.x, y: snap.y };
                 return { x: snap.x, y: snap.y };
@@ -29,7 +31,7 @@ export class LineTool {
 
     handleMouseDown(x, y, e) {
         this.isDrawing = true;
-        const p = this.centerSnap(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
+        const p = this.anchorSnap(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
         const snappedX = p.x;
         const snappedY = p.y;
 
@@ -44,7 +46,7 @@ export class LineTool {
 
     handleMouseMove(x, y, e) {
         if (this.isDrawing && this.tempElement) {
-            const p = this.centerSnap(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
+            const p = this.anchorSnap(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
             const snappedX = p.x;
             const snappedY = p.y;
 
