@@ -23,8 +23,10 @@ Live: https://asciilogic.com
 - Multi-select by drag-box or Shift/Ctrl/Cmd+click; move, resize (group
   corner handles), nudge (arrow keys), or restyle the selection together.
 - Stacking order: bring to front / send to back (`]` / `[`).
-- Optional center-line snapping to align shapes of different sizes, and a
-  center marker when attaching a line to a shape.
+- Optional center-line snapping to align shapes of different sizes, and
+  connection-point markers (center + edge midpoints) when attaching lines,
+  arrows, or polylines to a shape.
+- Polylines can carry an arrowhead on the start, end, or both.
 - Copy/paste/duplicate, undo/redo, and autosave to the browser.
 - Import existing ASCII art back into editable elements.
 - Import DXF (CAD) drawings and symbols — lines, polylines, circles, arcs,

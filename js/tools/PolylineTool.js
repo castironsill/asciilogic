@@ -9,21 +9,46 @@ export class PolylineTool {
         this.points = [];
     }
 
+    // Snap a vertex to a shape's nearest connection point (center / edge
+    // midpoint) when close, showing the marker; else fall back to the point.
+    anchorSnap(px, py) {
+        if (this.app.connectors) {
+            const snap = this.app.connectors.anchorSnap(px, py, null, 12 / this.app.zoom);
+            if (snap) {
+                this.app.snapIndicator = { x: snap.x, y: snap.y };
+                return { x: snap.x, y: snap.y };
+            }
+        }
+        this.app.snapIndicator = null;
+        return { x: px, y: py };
+    }
+
+    snapChanged(a, b) {
+        if (!a && !b) return false;
+        if (!a || !b) return true;
+        return a.x !== b.x || a.y !== b.y;
+    }
+
     handleMouseDown(x, y, e) {
-        const sx = this.app.grid.snapToGrid(x);
-        const sy = this.app.grid.snapToGrid(y);
+        const p = this.anchorSnap(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
         if (!this.active) {
             this.active = true;
-            this.points = [{ x: sx, y: sy }];
+            this.points = [{ x: p.x, y: p.y }];
         } else {
-            this.points.push({ x: sx, y: sy });
+            this.points.push({ x: p.x, y: p.y });
         }
-        this.preview(sx, sy);
+        this.preview(p.x, p.y);
     }
 
     handleMouseMove(x, y, e) {
-        if (!this.active) return;
-        this.preview(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
+        const had = this.app.snapIndicator;
+        const p = this.anchorSnap(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
+        if (!this.active) {
+            // Hover preview of connection points before the first click.
+            if (this.snapChanged(had, this.app.snapIndicator)) this.app.render();
+            return;
+        }
+        this.preview(p.x, p.y);
     }
 
     handleMouseUp(x, y, e) {
@@ -32,11 +57,14 @@ export class PolylineTool {
 
     // Show the committed points plus a rubber-band segment to the cursor.
     preview(cx, cy) {
+        const arrows = this.app.polylineArrows || { start: false, end: false };
         this.app.tempElement = {
             type: 'polyline',
             points: [...this.points, { x: cx, y: cy }],
             color: this.app.colorManager.getColor(),
-            lineStyle: this.app.lineStyleManager.getLineStyle()
+            lineStyle: this.app.lineStyleManager.getLineStyle(),
+            startArrow: !!arrows.start,
+            endArrow: !!arrows.end
         };
         this.app.render();
     }
@@ -45,11 +73,14 @@ export class PolylineTool {
     finish() {
         const pts = this.dedupe(this.points);
         if (pts.length >= 2) {
+            const arrows = this.app.polylineArrows || { start: false, end: false };
             this.app.addElement({
                 type: 'polyline',
                 points: pts,
                 color: this.app.colorManager.getColor(),
-                lineStyle: this.app.lineStyleManager.getLineStyle()
+                lineStyle: this.app.lineStyleManager.getLineStyle(),
+                startArrow: !!arrows.start,
+                endArrow: !!arrows.end
             });
         }
         this.cancel();
@@ -59,6 +90,7 @@ export class PolylineTool {
         this.active = false;
         this.points = [];
         this.app.tempElement = null;
+        this.app.snapIndicator = null;
         this.app.render();
     }
 

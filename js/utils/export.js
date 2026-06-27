@@ -357,6 +357,27 @@ export class ExportManager {
         });
     }
     
+    // SVG V-arrowhead at `tip`, pointing away from `from`.
+    svgArrowHead(tip, from, color, transform) {
+        const angle = Math.atan2(tip.y - from.y, tip.x - from.x);
+        const len = 15, a = Math.PI / 6;
+        const x1 = tip.x - len * Math.cos(angle - a), y1 = tip.y - len * Math.sin(angle - a);
+        const x2 = tip.x - len * Math.cos(angle + a), y2 = tip.y - len * Math.sin(angle + a);
+        return `\n    <path d="M ${tip.x} ${tip.y} L ${x1} ${y1} M ${tip.x} ${tip.y} L ${x2} ${y2}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round"${transform}/>`;
+    }
+
+    // DXF V-arrowhead (two solid lines) at `tip`, pointing away from `from`.
+    dxfArrowHead(tip, from, scale, flipY, colorIndex) {
+        const angle = Math.atan2(tip.y - from.y, tip.x - from.x);
+        const len = 15, a = Math.PI / 6;
+        let out = '';
+        out += this.dxfLine(tip.x * scale, flipY(tip.y),
+            (tip.x - len * Math.cos(angle - a)) * scale, flipY(tip.y - len * Math.sin(angle - a)), 'solid', colorIndex);
+        out += this.dxfLine(tip.x * scale, flipY(tip.y),
+            (tip.x - len * Math.cos(angle + a)) * scale, flipY(tip.y - len * Math.sin(angle + a)), 'solid', colorIndex);
+        return out;
+    }
+
     drawArrowHeads(grid, arrow, toGridX, toGridY) {
         const endX = toGridX(arrow.endX);
         const endY = toGridY(arrow.endY);
@@ -630,6 +651,8 @@ export class ExportManager {
                     if (el.lineStyle === 'dashed') strokeDasharray = ' stroke-dasharray="10,5"';
                     else if (el.lineStyle === 'dotted') strokeDasharray = ' stroke-dasharray="2,4"';
                     svg += `\n    <path d="${path}" stroke="${color}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"${strokeDasharray}${transform}/>`;
+                    if (el.endArrow) svg += this.svgArrowHead(pts[pts.length - 1], pts[pts.length - 2], color, transform);
+                    if (el.startArrow) svg += this.svgArrowHead(pts[0], pts[1], color, transform);
                 }
             } else if (el.type === 'dimension') {
                 svg += `\n    <line x1="${el.startX}" y1="${el.startY}" x2="${el.endX}" y2="${el.endY}" stroke="${color}" stroke-width="2"${transform}/>`;
@@ -853,6 +876,8 @@ export class ExportManager {
                         el.lineStyle || 'solid', colorIndex
                     );
                 }
+                if (pts.length >= 2 && el.endArrow) dxf += this.dxfArrowHead(pts[pts.length - 1], pts[pts.length - 2], scale, flipY, colorIndex);
+                if (pts.length >= 2 && el.startArrow) dxf += this.dxfArrowHead(pts[0], pts[1], scale, flipY, colorIndex);
             } else if (el.type === 'dimension') {
                 dxf += this.dxfLine(el.startX * scale, flipY(el.startY), el.endX * scale, flipY(el.endY), 'solid', colorIndex);
                 const ddx = el.endX - el.startX, ddy = el.endY - el.startY;

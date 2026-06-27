@@ -288,7 +288,21 @@
                         <option value="medium">Medium Dots</option>
                         <option value="dense">Dense Dots</option>
                     </select>
-                    
+
+                </div>
+                <!-- Polyline Arrow Controls -->
+                <div class="line-style-controls" id="polyline-arrow-controls" style="display: none; gap: 8px; margin-left: 20px;">
+                    <label style="font-size: 12px; color: var(--text-secondary);">Ends:</label>
+                    <button class="style-btn" id="poly-arrow-start" title="Arrow at start" aria-label="Arrow at start" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12H5m6-6l-6 6 6 6"/>
+                        </svg>
+                    </button>
+                    <button class="style-btn" id="poly-arrow-end" title="Arrow at end" aria-label="Arrow at end" aria-pressed="false">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12h16m-6-6l6 6-6 6"/>
+                        </svg>
+                    </button>
                 </div>
                 <button class="control-btn" id="theme-toggle" title="Toggle light / dark theme" aria-label="Toggle light or dark theme" aria-pressed="false">
                     <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false">
@@ -350,7 +364,7 @@
                 <li><strong>Arrow</strong> <kbd>A</kbd> — Same as Line, with an arrowhead.</li>
                 <li><strong>Box</strong> <kbd>B</kbd> — Drag to draw a rectangle, then drag its handles to resize.</li>
                 <li><strong>Ellipse</strong> <kbd>C</kbd> — Drag to draw a circle or ellipse. Same fills and handles as a box.</li>
-                <li><strong>Polyline</strong> <kbd>P</kbd> — Click to drop each point; double-click, <kbd>Enter</kbd>, or <kbd>Esc</kbd> to finish.</li>
+                <li><strong>Polyline</strong> <kbd>P</kbd> — Click to drop each point; double-click, <kbd>Enter</kbd>, or <kbd>Esc</kbd> to finish. Points snap to shape connection points like lines, and the <em>Ends</em> toggles add an arrowhead to the start, end, or both (shown in PNG, SVG, and DXF exports).</li>
                 <li><strong>Dimension</strong> <kbd>D</kbd> — Drag a dimension line with end ticks, then type a value (e.g. 5.0m). It's a label you type, not measured from the canvas. Double-click to edit.</li>
                 <li><strong>Text</strong> <kbd>T</kbd> — Click where you want it and type. <kbd>Enter</kbd> adds a line; <kbd>Esc</kbd> or a click elsewhere finishes. Double-click any text to edit it.</li>
             </ul>

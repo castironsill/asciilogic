@@ -41,4 +41,18 @@ describe('polyline element', () => {
     const dxf = makeManager([poly]).exportToDXF();
     expect((dxf.match(/\nLINE\n/g) || []).length).toBe(2); // two segments
   });
+
+  it('adds an arrowhead path in SVG when an end arrow is set', () => {
+    const count = s => (s.match(/<path/g) || []).length;
+    const base = count(makeManager([poly]).exportToSVG(true));
+    const withArrow = count(makeManager([{ ...poly, endArrow: true }]).exportToSVG(true));
+    expect(withArrow).toBe(base + 1);
+  });
+
+  it('adds two arrowhead segments in DXF per arrow end', () => {
+    const count = s => (s.match(/\nLINE\n/g) || []).length;
+    const base = count(makeManager([poly]).exportToDXF());
+    const both = count(makeManager([{ ...poly, startArrow: true, endArrow: true }]).exportToDXF());
+    expect(both).toBe(base + 4); // 2 segments per arrowhead
+  });
 });

@@ -180,37 +180,37 @@ export class Renderer {
             stroke(pts);
             ctx.setLineDash([]);
         }
+
+        // Optional arrowheads on either end, aimed along the end segment.
+        if (element.endArrow && pts.length >= 2) {
+            this.drawArrowHeadAt(ctx, pts[pts.length - 1].x, pts[pts.length - 1].y, pts[pts.length - 2].x, pts[pts.length - 2].y);
+        }
+        if (element.startArrow && pts.length >= 2) {
+            this.drawArrowHeadAt(ctx, pts[0].x, pts[0].y, pts[1].x, pts[1].y);
+        }
+        ctx.restore();
+    }
+
+    // Draw a V arrowhead whose tip is at (tipX,tipY), pointing away from
+    // (fromX,fromY). Shared by arrows and polyline end-arrows.
+    drawArrowHeadAt(ctx, tipX, tipY, fromX, fromY) {
+        ctx.save();
+        ctx.setLineDash([]); // Arrow heads are always solid
+        const size = 10;
+        const angle = Math.atan2(tipY - fromY, tipX - fromX);
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(tipX - size * Math.cos(angle - Math.PI / 6), tipY - size * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(tipX - size * Math.cos(angle + Math.PI / 6), tipY - size * Math.sin(angle + Math.PI / 6));
+        ctx.stroke();
         ctx.restore();
     }
 
     drawArrowHead(ctx, element) {
-        // Arrow heads are always solid
-        ctx.save();
-        ctx.setLineDash([]); // Ensure arrow heads are solid
-        
-        const size = 10;
-        let angle;
-        
-        if (element.bendX !== undefined) {
-            angle = Math.atan2(element.endY - element.bendY, element.endX - element.bendX);
-        } else {
-            angle = Math.atan2(element.endY - element.startY, element.endX - element.startX);
-        }
-        
-        ctx.beginPath();
-        ctx.moveTo(element.endX, element.endY);
-        ctx.lineTo(
-            element.endX - size * Math.cos(angle - Math.PI / 6),
-            element.endY - size * Math.sin(angle - Math.PI / 6)
-        );
-        ctx.moveTo(element.endX, element.endY);
-        ctx.lineTo(
-            element.endX - size * Math.cos(angle + Math.PI / 6),
-            element.endY - size * Math.sin(angle + Math.PI / 6)
-        );
-        ctx.stroke();
-        
-        ctx.restore();
+        const fromX = element.bendX !== undefined ? element.bendX : element.startX;
+        const fromY = element.bendY !== undefined ? element.bendY : element.startY;
+        this.drawArrowHeadAt(ctx, element.endX, element.endY, fromX, fromY);
     }
     
     drawBox(ctx, element) {

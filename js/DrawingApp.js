@@ -38,6 +38,8 @@ export class DrawingApp {
         this.alignSnap = false;
         this.alignGuides = null;   // live centerline guides while dragging
         this.snapIndicator = null; // center marker while attaching a connector
+        // Default arrow ends for new polylines (toggled in the top bar).
+        this.polylineArrows = { start: false, end: false };
         this.isDrawing = false;
         this.isPanning = false;
         
@@ -265,6 +267,12 @@ export class DrawingApp {
                 toggleAlignBtn.setAttribute('aria-pressed', String(this.alignSnap));
             });
         }
+
+        // Polyline arrow-end toggles.
+        const polyStartBtn = document.getElementById('poly-arrow-start');
+        const polyEndBtn = document.getElementById('poly-arrow-end');
+        if (polyStartBtn) polyStartBtn.addEventListener('click', () => this.togglePolylineArrow('start'));
+        if (polyEndBtn) polyEndBtn.addEventListener('click', () => this.togglePolylineArrow('end'));
         
         // Auto-save every 30 seconds. Back off if storage repeatedly fails
         // (e.g. quota exceeded) so we don't spin and spam the console.
@@ -753,6 +761,22 @@ export class DrawingApp {
         return this.selectedElement ? [this.selectedElement] : [];
     }
 
+    // Toggle an arrow end for new polylines and any selected polylines.
+    togglePolylineArrow(which) {
+        const key = which === 'start' ? 'startArrow' : 'endArrow';
+        const polys = this.selectionList().filter(el => el.type === 'polyline');
+        const current = polys.length ? !!polys[0][key] : !!this.polylineArrows[which];
+        const next = !current;
+        this.polylineArrows[which] = next;
+        if (polys.length) {
+            polys.forEach(el => { el[key] = next; });
+            this.history.saveState();
+            this.storage.save();
+        }
+        this.render();
+        this.refreshStyleControls();
+    }
+
     bringToFront() { this.reorderZ('front'); }
     sendToBack() { this.reorderZ('back'); }
 
@@ -1036,6 +1060,23 @@ export class DrawingApp {
         if (colorRow) {
             const showColor = this.currentTool !== 'select' || selected.length > 0;
             colorRow.style.display = showColor ? 'flex' : 'none';
+        }
+
+        // Polyline arrow-end toggles: shown for the Polyline tool or when a
+        // polyline is selected; reflect the selection (or the new-element default).
+        const polyArrows = document.getElementById('polyline-arrow-controls');
+        if (polyArrows) {
+            const polys = selected.filter(el => el.type === 'polyline');
+            const show = this.currentTool === 'polyline' || polys.length > 0;
+            polyArrows.style.display = show ? 'flex' : 'none';
+            if (show) {
+                const startOn = polys.length ? !!polys[0].startArrow : !!this.polylineArrows.start;
+                const endOn = polys.length ? !!polys[0].endArrow : !!this.polylineArrows.end;
+                const sBtn = document.getElementById('poly-arrow-start');
+                const eBtn = document.getElementById('poly-arrow-end');
+                if (sBtn) { sBtn.classList.toggle('active', startOn); sBtn.setAttribute('aria-pressed', String(startOn)); }
+                if (eBtn) { eBtn.classList.toggle('active', endOn); eBtn.setAttribute('aria-pressed', String(endOn)); }
+            }
         }
     }
 
