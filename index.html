@@ -319,91 +319,71 @@
                 <button class="modal-close" id="close-help" aria-label="Close">&times;</button>
             </div>
             
-            <p><strong>asciilogic</strong> is a powerful ASCII diagram tool designed for creating logic diagrams, control schematics, elevator layouts, and technical documentation. Perfect for engineers, developers, and anyone who needs to create clear technical diagrams that can be embedded in code, documentation, or emails.</p>
+            <p>Draw diagrams in your browser and turn them into ASCII or Unicode text, images, or CAD files. Everything stays on your machine, and there's no sign-up. Good for flowcharts, logic and control diagrams, network and architecture sketches, and anything you want to paste into code, a README, or an email.</p>
 
-            <h2>Drawing Tools</h2>
+            <h2>Tools</h2>
             <ul>
-                <li><strong>Select Tool</strong> <kbd>V</kbd> - Select, move, and edit elements. Drag to create selection boxes for multiple elements.</li>
-                <li><strong>Line Tool</strong> <kbd>L</kbd> - Draw straight lines with optional 90° bends. End a line on a box or circle to attach it — it stays connected when you move or resize the shape.</li>
-                <li><strong>Arrow Tool</strong> <kbd>A</kbd> - Draw lines with directional arrows. Attaches to shapes just like the line tool.</li>
-                <li><strong>Box Tool</strong> <kbd>B</kbd> - Create rectangles for components, modules, or grouping elements. Select one and drag its handles to resize.</li>
-                <li><strong>Ellipse Tool</strong> <kbd>C</kbd> - Draw circles and ellipses. Supports the same fill, pattern, and color options as boxes, and the same resize handles.</li>
-                <li><strong>Polyline Tool</strong> <kbd>P</kbd> - Click to drop each point of a multi-segment line; press <kbd>Esc</kbd> or <kbd>Enter</kbd> (or double-click) to finish. Supports all line styles.</li>
-                <li><strong>Dimension Tool</strong> <kbd>D</kbd> - Drag a not-to-scale dimension line with end ticks, then type the value (e.g. "5.0m") shown centered on it. Double-click to edit the value.</li>
-                <li><strong>Text Tool</strong> <kbd>T</kbd> - Add labels and annotations. Click to place the cursor, then type. Press <kbd>Enter</kbd> for a new line; click elsewhere or press <kbd>Esc</kbd> to finish. Double-click existing text to edit.</li>
+                <li><strong>Select</strong> <kbd>V</kbd> — Click an element to pick it, drag to move it. Drag an empty area to box-select several.</li>
+                <li><strong>Line</strong> <kbd>L</kbd> — Click and drag. Lines snap to horizontal, vertical, or a single 90° bend. Finish on a box or circle and the line stays attached when you move or resize that shape.</li>
+                <li><strong>Arrow</strong> <kbd>A</kbd> — Same as Line, with an arrowhead.</li>
+                <li><strong>Box</strong> <kbd>B</kbd> — Drag to draw a rectangle, then drag its handles to resize.</li>
+                <li><strong>Ellipse</strong> <kbd>C</kbd> — Drag to draw a circle or ellipse. Same fills and handles as a box.</li>
+                <li><strong>Polyline</strong> <kbd>P</kbd> — Click to drop each point; double-click, <kbd>Enter</kbd>, or <kbd>Esc</kbd> to finish.</li>
+                <li><strong>Dimension</strong> <kbd>D</kbd> — Drag a dimension line with end ticks, then type a value (e.g. 5.0m). It's a label you type, not measured from the canvas. Double-click to edit.</li>
+                <li><strong>Text</strong> <kbd>T</kbd> — Click where you want it and type. <kbd>Enter</kbd> adds a line; <kbd>Esc</kbd> or a click elsewhere finishes. Double-click any text to edit it.</li>
             </ul>
+
+            <h2>Selecting &amp; editing</h2>
+            <ul>
+                <li>Move one element by dragging it; move several by box-selecting first.</li>
+                <li>Add or remove with <kbd>Shift</kbd>/<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + click. Hold the same key while box-dragging to add to the current selection.</li>
+                <li>Resize a box or circle by dragging its handles. Resize a whole group by selecting two or more elements and dragging a corner of the group box — everything scales together, text included.</li>
+                <li>Double-click a line or arrow to add a label along it.</li>
+                <li>Press <kbd>Delete</kbd> to remove the selection.</li>
+            </ul>
+
+            <h2>Styling</h2>
+            <ul>
+                <li><strong>Color</strong> — pick a swatch before drawing, or select elements and pick a swatch to recolor them. One color control covers every element type.</li>
+                <li><strong>Fill</strong> — select a box or circle to set None, Solid, or a pattern (diagonal, cross, lines, or dots).</li>
+                <li><strong>Line style</strong> — select a line, arrow, or polyline to switch between solid, dashed, dotted, and zig-zag.</li>
+                <li><strong>Font size</strong> — set it for the Text tool, or select text to change it.</li>
+            </ul>
+            <p>These controls appear in the top bar only when they apply to the current tool or selection.</p>
 
             <h2>Keyboard Shortcuts</h2>
             <ul>
-                <li><kbd>Ctrl+C</kbd> - Copy selected elements</li>
-                <li><kbd>Ctrl+V</kbd> - Paste copied elements at cursor</li>
-                <li><kbd>Ctrl+D</kbd> - Duplicate selected elements</li>
-                <li><kbd>Ctrl+Z</kbd> - Undo last action</li>
-                <li><kbd>Ctrl+Y</kbd> - Redo action</li>
-                <li><kbd>Delete</kbd> - Delete selected elements</li>
-                <li><kbd>Shift</kbd>/<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + Click - Add or remove from the selection (Select tool)</li>
-                <li><kbd>Shift+Drag</kbd> - Pan the canvas (or middle-mouse drag)</li>
-                <li><kbd>Mouse Wheel</kbd> - Zoom in/out</li>
+                <li><kbd>V</kbd> <kbd>L</kbd> <kbd>A</kbd> <kbd>B</kbd> <kbd>C</kbd> <kbd>P</kbd> <kbd>D</kbd> <kbd>T</kbd> — switch tools (Select, Line, Arrow, Box, Ellipse, Polyline, Dimension, Text)</li>
+                <li><kbd>Ctrl+C</kbd> / <kbd>Ctrl+V</kbd> / <kbd>Ctrl+D</kbd> — copy / paste / duplicate</li>
+                <li><kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd> — undo / redo</li>
+                <li><kbd>Ctrl+S</kbd> — save now</li>
+                <li><kbd>Delete</kbd> — delete the selection</li>
+                <li><kbd>Shift</kbd>/<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + click — add to or remove from the selection</li>
+                <li><kbd>Shift</kbd>+drag or middle-mouse drag — pan; mouse wheel — zoom</li>
             </ul>
 
-            <h2>Features</h2>
-            <h3>Smart Line Drawing</h3>
-            <p>Lines automatically constrain to horizontal, vertical, or single 90° bends. Start dragging in your intended direction, and the line will follow intelligently.</p>
-
-            <h3>Multi-Selection</h3>
-            <p>Select multiple elements by dragging a selection box, or hold <kbd>Shift</kbd> (or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>) and click elements to add or remove them one at a time. Hold the same modifier while dragging a box to add those elements to the current selection. Move groups together, or restyle them all at once with the style controls. With two or more elements selected, drag a <strong>corner handle</strong> of the group box to scale the whole selection proportionally — handy for resizing an imported drawing.</p>
-
-            <h3>Text Editing</h3>
-            <p>Create text with different font sizes using the Font Size control. Select existing text to change its size, or double-click to edit both content and size.</p>
-
-            <h3>Import & Export</h3>
-            <p>Import existing ASCII diagrams from other tools or export your creations in multiple formats: ASCII Basic or Extended (Unicode), PNG images, SVG vector graphics, or DXF for CAD software. Perfect for embedding in source code, markdown documentation, presentations, or technical drawings.</p>
-            <p><strong>Import DXF</strong> brings in simple CAD drawings and symbols (e.g. a valve) so you can build flowcharts around them. Supported entities: lines, polylines (including rounded/bulged corners), circles, arcs, ellipses, splines, text, and blocks (inserts). Imported elements are selected so you can move them — or drag a group corner handle to resize them — right away. <strong>DWG is not supported directly</strong> — convert it to DXF first with free tools such as LibreCAD or the ODA File Converter.</p>
-
-            <h3>Grid &amp; Snapping</h3>
-            <p>Elements snap to a configurable grid for clean, aligned diagrams (grid size 5–50 pixels). The two buttons next to Grid Size toggle grid <em>visibility</em> and <em>snapping</em> independently — you can hide the grid while still snapping, or show it while drawing freely.</p>
-
-            <h2>Export Formats</h2>
+            <h2>Canvas: grid, zoom, and panning</h2>
             <ul>
-                <li><strong>ASCII Basic</strong> - Standard ASCII characters for maximum compatibility</li>
-                <li><strong>ASCII Extended</strong> - Unicode box-drawing characters for cleaner appearance</li>
-                <li><strong>PNG</strong> - High-quality raster images for presentations and documentation</li>
-                <li><strong>SVG</strong> - Scalable vector graphics perfect for web and print</li>
-                <li><strong>DXF</strong> - CAD format for importing into AutoCAD and similar software</li>
-            </ul>
-            <p>For PNG and SVG you can choose a <strong>Dark</strong>, <strong>White</strong>, or <strong>Transparent</strong> background and turn the watermark off — handy for dropping a diagram into a light document. Uncolored elements switch to dark ink automatically on light backgrounds.</p>
-
-            <h2>Common Use Cases</h2>
-            <ul>
-                <li><strong>Elevator Control Systems</strong> - Document shaft layouts, control logic, and safety circuits</li>
-                <li><strong>Logic Diagrams</strong> - Create flowcharts and state machines</li>
-                <li><strong>Network Topology</strong> - Show system connections and data flow</li>
-                <li><strong>Electrical Schematics</strong> - Basic relay logic and control circuits</li>
-                <li><strong>Software Architecture</strong> - Module relationships and data flow</li>
-                <li><strong>Documentation</strong> - Embed diagrams directly in code comments or README files</li>
+                <li><strong>Grid size</strong> sets the snap spacing (5–50 px). The two buttons beside it toggle the grid's visibility and snapping separately, so you can snap to a hidden grid or draw freely over a visible one.</li>
+                <li><strong>Zoom</strong> with the mouse wheel or the +/− buttons; <strong>pan</strong> with the middle mouse button or <kbd>Shift</kbd>+drag. <strong>Fit Content</strong> zooms to show the whole drawing.</li>
+                <li><strong>Touch:</strong> one finger draws or drags, two fingers pinch to zoom and pan, and a double-tap edits text.</li>
             </ul>
 
-            <h2>Tips</h2>
+            <h2>Importing &amp; exporting</h2>
             <ul>
-                <li>Use <strong>Fit Content</strong> to automatically zoom and center your diagram</li>
-                <li>Hold middle mouse button to pan, or use Shift+drag</li>
-                <li>On touch devices, draw with one finger; use two fingers to pinch-zoom and pan</li>
-                <li>Double-click text elements to edit their content</li>
-                <li>Double-click a line or arrow to add a label in the middle of it (and again to edit it)</li>
-                <li>Line styles include solid, dashed, dotted, and zig-zag</li>
-                <li>Select text and use the Font Size control to change its size</li>
-                <li>The <strong>Color</strong> control in the top bar applies to every element type — boxes, circles, lines, arrows, and text. Pick a color before drawing, or select existing elements to recolor them.</li>
-                <li>Select a box or circle to change its fill and pattern; select a line or arrow to change its line style. Drag a selection box (or Shift+click) over several elements to restyle them all at once.</li>
-                <li>Export to ASCII Extended for cleaner box-drawing characters</li>
-                <li>Export to SVG for scalable graphics that look perfect at any size</li>
-                <li>Use the grid and snap toggles (next to Grid Size) to hide the grid or draw without snapping — they work independently</li>
-                <li>Toggle the light/dark theme with the sun/moon button in the top bar — your choice is remembered, and white elements stay visible by switching to dark ink on a light canvas</li>
-                <li>The tool saves your work in browser memory - clear cache carefully!</li>
+                <li><strong>Export</strong> to ASCII (plain or Unicode box-drawing), PNG, SVG, or DXF. For PNG and SVG you can choose a dark, white, or transparent background and turn off the watermark; ASCII can be wrapped in a Markdown fence, a comment block, or a frame. White elements switch to dark ink on a light background so they stay visible.</li>
+                <li><strong>Import ASCII</strong> — paste existing ASCII art to turn it back into editable elements.</li>
+                <li><strong>Import DXF</strong> — open a .dxf file to bring in CAD drawings or symbols: lines, polylines (including rounded corners), circles, arcs, ellipses, splines, text, and blocks. Imported parts arrive selected, so you can move or resize them right away. DWG isn't supported — convert it to DXF first (for example with LibreCAD or the free ODA File Converter).</li>
             </ul>
+
+            <h2>Theme</h2>
+            <p>The sun/moon button in the top bar switches between dark and light. On a light canvas, white elements are drawn in dark ink so they stay visible. Your choice is remembered on this browser.</p>
+
+            <h2>Saving</h2>
+            <p>Your work saves to this browser automatically and reloads next time you visit. Clearing the site's data will erase it, so export anything you want to keep.</p>
 
             <p style="margin-top: 30px; text-align: center; color: var(--text-secondary);">
-                Created for engineers and developers who need quick, clean ASCII diagrams.<br>
-                asciilogic - Making technical diagrams as simple as typing.
+                asciilogic is free and open source. Found a bug or have an idea? Open an issue on GitHub.
             </p>
             <p style="text-align: center;">
                 <a href="accessibility.html" target="_blank" rel="noopener" style="color: var(--accent);">Accessibility Statement</a>
