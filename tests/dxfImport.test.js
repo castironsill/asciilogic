@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseDxf, primitivesToElements } from '../js/utils/dxfImport.js';
+import { parseDxf, primitivesToElements, expandPolyline } from '../js/utils/dxfImport.js';
 
 // Build a minimal ASCII DXF document from a list of entity blocks. Each entity
 // is an array of [code, value] pairs; we wrap them in an ENTITIES section.
@@ -103,5 +103,44 @@ describe('primitivesToElements', () => {
       { defaultColor: '#ffffff' }
     );
     expect(elements[0].color).toBe('#ffffff');
+  });
+
+  it('normalises scale so a drawing fills the target size', () => {
+    // A 100-unit-tall line should be scaled to the target size.
+    const { elements } = primitivesToElements(
+      [{ kind: 'line', x1: 0, y1: 0, x2: 0, y2: 100, color: null }],
+      { margin: 0, targetSize: 500 }
+    );
+    const line = elements[0];
+    expect(Math.abs(line.startY - line.endY)).toBeCloseTo(500, 1);
+  });
+});
+
+describe('expandPolyline (bulges)', () => {
+  it('passes straight segments through unchanged', () => {
+    const pts = expandPolyline([{ x: 0, y: 0 }, { x: 10, y: 0 }], false);
+    expect(pts).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }]);
+  });
+
+  it('expands a bulge of 1 into a semicircle ending at the next vertex', () => {
+    const pts = expandPolyline([{ x: 0, y: 0, bulge: 1 }, { x: 10, y: 0 }], false);
+    // Starts at the first vertex, ends exactly at the second.
+    expect(pts[0]).toEqual({ x: 0, y: 0 });
+    const last = pts[pts.length - 1];
+    expect(last.x).toBeCloseTo(10, 6);
+    expect(last.y).toBeCloseTo(0, 6);
+    // Every point lies on the circle of radius 5 centred on the chord midpoint.
+    for (const p of pts) {
+      expect(Math.hypot(p.x - 5, p.y - 0)).toBeCloseTo(5, 6);
+    }
+    // The apex is offset by the radius from the chord (a true semicircle).
+    const apex = pts[Math.floor(pts.length / 2)];
+    expect(Math.abs(apex.y)).toBeCloseTo(5, 6);
+  });
+
+  it('closes the loop using the last vertex bulge when closed', () => {
+    const pts = expandPolyline([{ x: 0, y: 0 }, { x: 10, y: 0 }], true);
+    const last = pts[pts.length - 1];
+    expect(last).toEqual({ x: 0, y: 0 }); // returns to start
   });
 });

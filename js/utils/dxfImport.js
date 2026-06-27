@@ -82,7 +82,10 @@ function parseOneEntity(pairs, idx, out, blocks, stats, depth) {
         let i = next;
         while (i < pairs.length && pairs[i].code === 0 && pairs[i].value === 'VERTEX') {
             const v = readEntity(pairs, i);
-            points.push({ x: numVal(v.codes, 10), y: numVal(v.codes, 20) });
+            const vert = { x: numVal(v.codes, 10), y: numVal(v.codes, 20) };
+            const bulge = numVal(v.codes, 42, 0);
+            if (bulge) vert.bulge = bulge;
+            points.push(vert);
             i = v.next;
         }
         if (i < pairs.length && pairs[i].code === 0 && pairs[i].value === 'SEQEND') {
@@ -141,14 +144,21 @@ function parseOneEntity(pairs, idx, out, blocks, stats, depth) {
         case 'LWPOLYLINE': {
             const closed = (numVal(codes, 70, 0) & 1) === 1;
             const points = [];
-            for (let k = 0; k < codes.length; k++) {
-                if (codes[k].code === 10) {
-                    const x = parseFloat(codes[k].value);
-                    const yc = codes[k + 1];
-                    const y = yc && yc.code === 20 ? parseFloat(yc.value) : 0;
-                    points.push({ x, y });
+            let cur = null;
+            // A vertex is a 10/20 pair; an optional bulge (42) follows before
+            // the next 10. Bulge encodes an arc on the segment leaving the vertex.
+            for (const c of codes) {
+                if (c.code === 10) {
+                    if (cur) points.push(cur);
+                    cur = { x: parseFloat(c.value), y: 0 };
+                } else if (c.code === 20 && cur) {
+                    cur.y = parseFloat(c.value);
+                } else if (c.code === 42 && cur) {
+                    const b = parseFloat(c.value);
+                    if (b) cur.bulge = b;
                 }
             }
+            if (cur) points.push(cur);
             if (points.length >= 2) out.push({ kind: 'polyline', points, closed, color });
             break;
         }
@@ -216,7 +226,15 @@ function transformPrimitive(prim, { tx, ty, sx, sy, rot, bx, by }) {
             return { ...prim, x1: a.x, y1: a.y, x2: b.x, y2: b.y };
         }
         case 'polyline':
-            return { ...prim, points: prim.points.map(p => pt(p.x, p.y)) };
+            // Bulge is a scale/rotation-invariant ratio, so carry it through.
+            return {
+                ...prim,
+                points: prim.points.map(p => {
+                    const q = pt(p.x, p.y);
+                    if (p.bulge !== undefined) q.bulge = p.bulge;
+                    return q;
+                })
+            };
         case 'circle': {
             const c = pt(prim.cx, prim.cy);
             if (asx === asy) return { ...prim, cx: c.x, cy: c.y, r: prim.r * asx };
@@ -324,11 +342,52 @@ function arcToPoints(cx, cy, r, a1, a2) {
     return pts;
 }
 
+// Tessellate one bulged polyline segment (a -> b) into points (DXF coords).
+// A DXF bulge is tan(includedAngle / 4); its sign gives the arc direction.
+// Returns the intermediate points plus the endpoint b (the start a is assumed
+// to already be in the output).
+function bulgeArcPoints(a, b, bulge) {
+    const chord = Math.hypot(b.x - a.x, b.y - a.y);
+    const theta = 4 * Math.atan(bulge); // signed central angle
+    if (chord < 1e-9 || Math.abs(theta) < 1e-9) return [{ x: b.x, y: b.y }];
+
+    const radius = chord / (2 * Math.sin(theta / 2)); // signed
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const apothem = radius * Math.cos(theta / 2);      // signed
+    // Left normal of a->b.
+    const nx = -(b.y - a.y) / chord, ny = (b.x - a.x) / chord;
+    const center = { x: mid.x + nx * apothem, y: mid.y + ny * apothem };
+
+    const R = Math.abs(radius);
+    const startA = Math.atan2(a.y - center.y, a.x - center.x);
+    const segs = Math.max(2, Math.ceil(Math.abs(theta) / (Math.PI / 12)));
+    const out = [];
+    for (let i = 1; i <= segs; i++) {
+        const ang = startA + theta * i / segs;
+        out.push({ x: center.x + R * Math.cos(ang), y: center.y + R * Math.sin(ang) });
+    }
+    return out;
+}
+
+// Expand a (possibly closed, possibly bulged) polyline into a flat point list
+// in DXF coordinates. Exported for testing.
+export function expandPolyline(points, closed) {
+    if (!points.length) return [];
+    const verts = closed ? [...points, points[0]] : points;
+    const out = [{ x: verts[0].x, y: verts[0].y }];
+    for (let i = 0; i < verts.length - 1; i++) {
+        const a = verts[i], b = verts[i + 1];
+        if (a.bulge) out.push(...bulgeArcPoints(a, b, a.bulge));
+        else out.push({ x: b.x, y: b.y });
+    }
+    return out;
+}
+
 // Collect every defining point of a primitive (for bounds).
 function primitivePoints(p) {
     switch (p.kind) {
         case 'line': return [{ x: p.x1, y: p.y1 }, { x: p.x2, y: p.y2 }];
-        case 'polyline': return p.points;
+        case 'polyline': return expandPolyline(p.points, p.closed);
         case 'circle': return [{ x: p.cx - p.r, y: p.cy - p.r }, { x: p.cx + p.r, y: p.cy + p.r }];
         case 'ellipse': return [{ x: p.cx - p.rx, y: p.cy - p.ry }, { x: p.cx + p.rx, y: p.cy + p.ry }];
         case 'arc': return [{ x: p.cx - p.r, y: p.cy - p.r }, { x: p.cx + p.r, y: p.cy + p.r }];
@@ -343,6 +402,7 @@ function primitivePoints(p) {
 export function primitivesToElements(primitives, options = {}) {
     const margin = options.margin ?? 40;
     const defaultColor = options.defaultColor ?? '#ffffff';
+    const targetSize = options.targetSize ?? 500;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     primitives.forEach(p => primitivePoints(p).forEach(({ x, y }) => {
@@ -355,9 +415,11 @@ export function primitivesToElements(primitives, options = {}) {
 
     const w = maxX - minX, h = maxY - minY;
     const maxDim = Math.max(w, h);
-    let scale = 1;
-    if (maxDim > 800) scale = 800 / maxDim;
-    else if (maxDim > 0 && maxDim < 100) scale = Math.min(5, 150 / maxDim);
+    // DXF files carry no reliable units, so a symbol may come in at any scale.
+    // Normalise so the drawing's largest dimension is a comfortable on-canvas
+    // size — otherwise inch-sized geometry renders a few pixels wide and even
+    // Fit Content (capped at 2x zoom) can't enlarge it enough to see.
+    const scale = maxDim > 0 ? targetSize / maxDim : 1;
 
     const round = (v) => Math.round(v * 10) / 10;
     // World transform: scale, flip Y, offset to a margin from the origin.
@@ -376,8 +438,9 @@ export function primitivesToElements(primitives, options = {}) {
                 break;
             }
             case 'polyline': {
-                const points = p.points.map(pt => T(pt.x, pt.y));
-                if (p.closed && points.length) points.push({ ...points[0] });
+                // Expand bulges (arc segments / radiused corners) and any closing
+                // segment into real points, then map to canvas space.
+                const points = expandPolyline(p.points, p.closed).map(pt => T(pt.x, pt.y));
                 if (points.length >= 2) elements.push({ type: 'polyline', points, lineStyle: 'solid', color });
                 break;
             }
