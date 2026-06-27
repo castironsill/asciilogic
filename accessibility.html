@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Accessibility statement for asciilogic — our conformance target, the measures taken, known limitations, and how to report an accessibility issue.">
+    <title>Accessibility Statement — asciilogic</title>
+    <link rel="canonical" href="https://asciilogic.com/accessibility.html">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        :root {
+            --bg: #1e1e1e;
+            --surface: #252525;
+            --text: #ffffff;
+            --muted: #c4c4c4;
+            --accent: #4da3ff;
+            --border: #3a3a3a;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+        }
+        .wrap {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 48px 24px 80px;
+        }
+        a { color: var(--accent); }
+        a:focus-visible,
+        .home:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        h1 { font-size: 30px; margin: 0 0 8px; }
+        h2 {
+            font-size: 20px;
+            margin: 36px 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        p, li { color: var(--muted); }
+        li { margin-bottom: 6px; }
+        .updated { color: var(--muted); font-size: 14px; margin-top: 0; }
+        .home {
+            display: inline-block;
+            margin-bottom: 32px;
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .home:hover { text-decoration: underline; }
+        .contact {
+            margin-top: 16px;
+            padding: 16px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <a class="home" href="/">&larr; Back to asciilogic</a>
+
+        <h1>Accessibility Statement</h1>
+        <p class="updated">Last updated: 27 June 2026</p>
+
+        <p>
+            asciilogic is a free, in-browser tool for sketching ASCII diagrams. We
+            want it to be usable by as many people as possible, and we treat
+            accessibility as an ongoing effort rather than a one-time checkbox.
+        </p>
+
+        <h2>Conformance target</h2>
+        <p>
+            We aim to meet the <a href="https://www.w3.org/TR/WCAG21/" rel="noopener" target="_blank">Web
+            Content Accessibility Guidelines (WCAG) 2.1, Level AA</a>, where they
+            reasonably apply to an interactive drawing application. asciilogic is
+            currently <strong>partially conformant</strong>: most of the interface
+            meets the standard, but parts of the freeform drawing canvas do not (see
+            Known limitations below).
+        </p>
+
+        <h2>Measures we have taken</h2>
+        <ul>
+            <li>Accessible names on every icon-only button (tools, undo/redo, grid and snap toggles); decorative icons are hidden from assistive technology.</li>
+            <li>Toggle buttons expose their on/off state (<code>aria-pressed</code>).</li>
+            <li>Dialogs (Help, Export, Import) use proper dialog semantics, can be closed with <kbd>Esc</kbd>, move focus into the dialog when opened and restore it on close, and keep keyboard focus within the dialog while open.</li>
+            <li>Clearly visible keyboard focus indicators on buttons, inputs, and controls.</li>
+            <li>Colour is chosen from labelled swatches, so colour names are conveyed to assistive technology rather than relying on sight alone.</li>
+            <li>A responsive layout with touch support and enlarged touch targets on touch devices.</li>
+            <li>Only the controls relevant to the current tool or selection are shown, reducing clutter.</li>
+        </ul>
+
+        <h2>Known limitations</h2>
+        <p>We are being upfront about where asciilogic falls short today:</p>
+        <ul>
+            <li><strong>The drawing canvas is not operable by keyboard or screen reader.</strong> Creating, selecting, and moving diagram elements currently requires a mouse or touch. This is an inherent challenge for a freeform visual canvas, and we have not yet built a non-pointer alternative.</li>
+            <li><strong>Diagram content has no automatic text alternative on the canvas.</strong> However, the <em>Export to ASCII</em> feature produces a plain-text version of your diagram that screen readers can read, which can serve as a text alternative.</li>
+            <li>The colour swatches do not yet support arrow-key navigation within the group.</li>
+            <li>We have not yet completed a formal third-party audit or a full manual screen-reader pass; these are planned.</li>
+        </ul>
+
+        <h2>Feedback &amp; reporting an issue</h2>
+        <p>
+            If you hit an accessibility barrier, please tell us — your reports
+            directly shape what we fix next. The fastest channel is our public issue
+            tracker:
+        </p>
+        <div class="contact">
+            <p style="margin:0;">
+                Report an accessibility issue on
+                <a href="https://github.com/castironsill/asciilogic/issues/new" rel="noopener" target="_blank">GitHub
+                Issues</a>. Please include the page or feature, what you expected,
+                and any assistive technology you were using.
+            </p>
+        </div>
+        <p>We aim to acknowledge accessibility reports within a few business days.</p>
+    </main>
+</body>
+</html>
