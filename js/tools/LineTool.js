@@ -99,7 +99,19 @@ export class LineTool {
             
             this.app.tempElement = this.tempElement;
             this.app.render();
+        } else if (this.isConnectorType()) {
+            // Hover preview: show the snap marker for the nearest anchor before
+            // the user starts drawing, so connection points are discoverable.
+            const had = this.app.snapIndicator;
+            this.anchorSnap(this.app.grid.snapToGrid(x), this.app.grid.snapToGrid(y));
+            if (this.snapChanged(had, this.app.snapIndicator)) this.app.render();
         }
+    }
+
+    snapChanged(a, b) {
+        if (!a && !b) return false;
+        if (!a || !b) return true;
+        return a.x !== b.x || a.y !== b.y;
     }
     
     handleMouseUp(x, y, e) {

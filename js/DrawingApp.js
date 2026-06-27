@@ -169,15 +169,18 @@ export class DrawingApp {
                 document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.currentTool = btn.dataset.tool;
-                
+
                 // Emit tool change event
                 this.eventBus.emit('toolChanged', this.currentTool);
-                
+
+                // Clear any hover snap marker left by the previous tool.
+                this.snapIndicator = null;
+
                 if (this.currentTool !== 'select') {
                     this.selectedElement = null;
                     this.selectedElements = [];
-                    this.render();
                 }
+                this.render();
 
                 this.refreshStyleControls();
                 this.updateCursor();
@@ -190,6 +193,10 @@ export class DrawingApp {
         this.mainCanvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
         this.mainCanvas.addEventListener('wheel', (e) => this.handleWheel(e));
         this.mainCanvas.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
+        // Clear the hover snap marker when the pointer leaves the canvas.
+        this.mainCanvas.addEventListener('mouseleave', () => {
+            if (this.snapIndicator) { this.snapIndicator = null; this.render(); }
+        });
 
         // Touch support: one finger draws/selects (routed through the mouse
         // handlers), two fingers pinch-zoom and pan. passive:false so we can
