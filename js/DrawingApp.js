@@ -531,6 +531,31 @@ export class DrawingApp {
             return;
         }
 
+        // Escape backs out to the Select tool (the default pointer). If already
+        // on Select, it clears the current selection instead. Either way, abandon
+        // any half-finished drag-draw so no stray preview is left behind.
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            const active = this.tools[this.currentTool];
+            if (active) {
+                active.isDrawing = false;
+                active.tempElement = null;
+            }
+            this.tempElement = null;
+
+            if (this.currentTool !== 'select') {
+                const selectBtn = document.querySelector('[data-tool="select"]');
+                if (selectBtn) selectBtn.click();
+            } else if (this.selectedElement || this.selectedElements.length > 0) {
+                this.selectedElement = null;
+                this.selectedElements = [];
+                this.refreshStyleControls();
+            }
+            this.snapIndicator = null;
+            this.render();
+            return;
+        }
+
         const hasSelection = this.selectedElement || this.selectedElements.length > 0;
 
         // Normalize the key so Ctrl/Cmd shortcuts still match with Caps Lock on
