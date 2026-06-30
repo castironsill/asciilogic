@@ -293,9 +293,11 @@ export class DrawingApp {
         const x = (e.clientX - rect.left - this.offsetX) / this.zoom;
         const y = (e.clientY - rect.top - this.offsetY) / this.zoom;
         
-        // Middle-mouse always pans. Shift+drag pans too, except with the
-        // Select tool where Shift/Ctrl/Cmd are selection modifiers.
-        const shiftPan = e.button === 0 && e.shiftKey && this.currentTool !== 'select';
+        // Middle-mouse always pans. Shift+drag pans too, except where Shift is a
+        // tool modifier: the Select tool (selection) and the Box/Ellipse tools
+        // (Shift constrains to a square/circle). Middle-mouse still pans there.
+        const shiftModifierTools = ['select', 'box', 'ellipse'];
+        const shiftPan = e.button === 0 && e.shiftKey && !shiftModifierTools.includes(this.currentTool);
         if (e.button === 1 || shiftPan) {
             this.isPanning = true;
             this.panStart = { x: e.clientX, y: e.clientY };
@@ -531,6 +533,10 @@ export class DrawingApp {
 
         const hasSelection = this.selectedElement || this.selectedElements.length > 0;
 
+        // Normalize the key so Ctrl/Cmd shortcuts still match with Caps Lock on
+        // or on layouts that report an uppercase e.key (e.key === 'C', not 'c').
+        const key = e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
+
         // Arrow keys nudge the selection (Shift = a whole grid step).
         if (hasSelection && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
             e.preventDefault();
@@ -550,13 +556,13 @@ export class DrawingApp {
         }
 
         // Copy/Paste handling
-        if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        if ((e.ctrlKey || e.metaKey) && key === 'c') {
             e.preventDefault();
             this.copySelected();
             return;
         }
-        
-        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+
+        if ((e.ctrlKey || e.metaKey) && key === 'v') {
             e.preventDefault();
             if (this.clipboard.length > 0) {
                 // Paste from internal clipboard at mouse position
@@ -567,8 +573,8 @@ export class DrawingApp {
             }
             return;
         }
-        
-        if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+
+        if ((e.ctrlKey || e.metaKey) && key === 'd') {
             e.preventDefault();
             this.duplicateSelected();
             return;
@@ -593,13 +599,13 @@ export class DrawingApp {
         }
         
         if (e.ctrlKey || e.metaKey) {
-            if (e.key === 'z') {
+            if (key === 'z') {
                 e.preventDefault();
                 this.history.undo();
-            } else if (e.key === 'y') {
+            } else if (key === 'y') {
                 e.preventDefault();
                 this.history.redo();
-            } else if (e.key === 's') {
+            } else if (key === 's') {
                 e.preventDefault();
                 this.storage.save();
                 notifications.show('Drawing saved');

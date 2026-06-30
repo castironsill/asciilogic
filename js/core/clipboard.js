@@ -7,6 +7,9 @@ export class Clipboard {
     constructor(app) {
         this.app = app;
         this.items = [];
+        // Center of the selection at copy time, so paste can detect (and avoid)
+        // dropping the copy exactly on top of the original.
+        this.sourceCenter = null;
     }
 
     copy() {
@@ -28,6 +31,7 @@ export class Clipboard {
         // Calculate center point of selection
         const centerX = (bounds.minX + bounds.maxX) / 2;
         const centerY = (bounds.minY + bounds.maxY) / 2;
+        this.sourceCenter = { x: centerX, y: centerY };
 
         // Deep copy elements with relative positions to center
         elementsToCopy.forEach(el => {
@@ -75,8 +79,21 @@ export class Clipboard {
         const pasteY = this.app.lastMousePos.y;
 
         // Snap to grid
-        const snappedX = this.app.grid.snapToGrid(pasteX);
-        const snappedY = this.app.grid.snapToGrid(pasteY);
+        let snappedX = this.app.grid.snapToGrid(pasteX);
+        let snappedY = this.app.grid.snapToGrid(pasteY);
+
+        // If the paste would land right on top of the source (e.g. copy then
+        // paste without moving the mouse), shift it by one grid step so the
+        // new copy is visibly separate instead of looking like nothing happened.
+        if (this.sourceCenter) {
+            const srcX = this.app.grid.snapToGrid(this.sourceCenter.x);
+            const srcY = this.app.grid.snapToGrid(this.sourceCenter.y);
+            if (snappedX === srcX && snappedY === srcY) {
+                const step = this.app.gridSize || 20;
+                snappedX += step;
+                snappedY += step;
+            }
+        }
 
         // Build the pasted elements, repositioned relative to the cursor.
         const idMap = new Map();
