@@ -497,9 +497,32 @@ label,
     color: var(--text-primary);
 }
 
+/* Long-form help copy reads better proportional; monospace is reserved for
+   chrome (headings, kbd, code) per the brand. */
 .help-content p, .help-content li {
-    line-height: 1.6;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.65;
     color: var(--text-secondary);
+}
+
+.help-content ul {
+    padding-left: 22px;
+    margin: 8px 0 4px;
+}
+
+.help-content li {
+    margin-bottom: 10px;
+}
+
+.help-content li:last-child {
+    margin-bottom: 0;
+}
+
+/* Tool names / emphasised terms stay in the mono voice to anchor the hierarchy. */
+.help-content li strong {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: var(--text-primary);
+    font-weight: 700;
 }
 
 .help-content code {
