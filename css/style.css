@@ -10,6 +10,7 @@
     --text-secondary: #a8a7a2;
     --accent: #23b06a;
     --accent-hover: #2ec078;
+    --accent-text: #23b06a;
     --on-accent: #0e2419;
     --bg-hover: #35352f;
     --danger: #c0392b;
@@ -27,9 +28,13 @@
     --bg-tertiary: #e8e7e0;
     --text-primary: #1a1a1a;
     --text-secondary: #5c5b55;
+    /* Fills/mark keep the vibrant brand green; small accent *text* uses the
+       darker --accent-text to clear WCAG AA (4.5:1), and button labels sit on
+       a dark --on-accent so they read on the green. */
     --accent: #1c9a5b;
-    --accent-hover: #15803d;
-    --on-accent: #ffffff;
+    --accent-hover: #23b06a;
+    --accent-text: #136f35;
+    --on-accent: #08160d;
     --bg-hover: #dcdbd3;
     --danger: #c0392b;
     --danger-hover: #e74c3c;
@@ -488,7 +493,7 @@ label,
 .help-content h2 {
     margin-top: 20px;
     margin-bottom: 10px;
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .help-content h3 {
@@ -530,7 +535,7 @@ label,
     padding: 2px 6px;
     border-radius: 3px;
     font-family: monospace;
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 /* Keyboard Key Style */
