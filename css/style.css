@@ -1,35 +1,40 @@
-/* CSS Variables for Theme */
+/* CSS Variables for Theme — "Corner Frame" brand palette.
+   Accent green #1c9a5b on light; the brighter #23b06a on the very dark
+   surfaces so it never drops below contrast. Surfaces are the brand
+   #1a1a1a (dark) / #f4f3ef warm off-white (light). */
 :root {
-    --bg-primary: #1e1e1e;
-    --bg-secondary: #252525;
-    --bg-tertiary: #2d2d2d;
-    --text-primary: #ffffff;
-    --text-secondary: #b0b0b0;
-    --accent: #007acc;
-    --accent-hover: #1f8fd6;
-    --bg-hover: #3a3a3a;
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #232322;
+    --bg-tertiary: #2c2c2b;
+    --text-primary: #edece8;
+    --text-secondary: #a8a7a2;
+    --accent: #23b06a;
+    --accent-hover: #2ec078;
+    --on-accent: #0e2419;
+    --bg-hover: #35352f;
     --danger: #c0392b;
     --danger-hover: #e74c3c;
-    --focus-ring: #4da3ff;
-    --grid-color: #333333;
+    --focus-ring: #23b06a;
+    --grid-color: #2a2a28;
     --canvas-bg: #1a1a1a;
 }
 
 /* Light / print theme — overrides the tokens; the canvas renderer flips white
    ink to dark so existing drawings stay visible. */
 :root[data-theme="light"] {
-    --bg-primary: #f4f4f5;
+    --bg-primary: #f4f3ef;
     --bg-secondary: #ffffff;
-    --bg-tertiary: #e6e6e8;
+    --bg-tertiary: #e8e7e0;
     --text-primary: #1a1a1a;
-    --text-secondary: #555555;
-    --accent: #0a66c2;
-    --accent-hover: #1f7fd6;
-    --bg-hover: #d8d8dc;
+    --text-secondary: #5c5b55;
+    --accent: #1c9a5b;
+    --accent-hover: #15803d;
+    --on-accent: #ffffff;
+    --bg-hover: #dcdbd3;
     --danger: #c0392b;
     --danger-hover: #e74c3c;
-    --focus-ring: #0a66c2;
-    --grid-color: #d6d6da;
+    --focus-ring: #1c9a5b;
+    --grid-color: #dedcd4;
     --canvas-bg: #ffffff;
 }
 
@@ -47,11 +52,54 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Cascadia Mono',
+        Menlo, Consolas, monospace;
     background: var(--bg-primary);
     color: var(--text-primary);
     overflow: hidden;
     user-select: none;
+}
+
+/* ---- Brand logo lockup (mark + wordmark + terminal caret) ----
+   The mark's rects inherit the accent; scale the whole lockup with font-size. */
+.al-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: .42em;
+    font-family: 'Space Mono', ui-monospace, monospace;
+    line-height: 1;
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.al-logo svg {
+    width: 1.16em;
+    height: 1.16em;
+    display: block;
+    flex: 0 0 auto;
+}
+
+.al-logo svg rect {
+    fill: var(--accent);
+}
+
+.al-logo .al-word {
+    font-weight: 700;
+    letter-spacing: -.015em;
+}
+
+.al-caret {
+    display: inline-block;
+    width: .11em;
+    height: .98em;
+    margin-left: .14em;
+    background: var(--accent);
+    animation: al-blink 1.15s steps(1) infinite;
+}
+
+@keyframes al-blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
 }
 
 /* Main Layout */
@@ -93,7 +141,7 @@ body {
 
 .tool-btn.active {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     border-color: var(--accent);
 }
 
@@ -189,7 +237,7 @@ canvas {
 
 .control-btn.active {
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
 }
 
 .control-btn.active:hover {
@@ -338,6 +386,12 @@ input[type="number"] {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
+    }
+
+    /* Keep the terminal caret shown (static), not frozen mid-blink hidden. */
+    .al-caret {
+        animation: none !important;
+        opacity: 1;
     }
 }
 

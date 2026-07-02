@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none" role="img" aria-label="asciilogic">
+  <title>asciilogic mark — monochrome white (for dark surfaces)</title>
+  <rect x="4" y="4" width="16" height="5" fill="#f0efec"></rect>
+  <rect x="4" y="4" width="5" height="16" fill="#f0efec"></rect>
+  <rect x="28" y="39" width="16" height="5" fill="#f0efec"></rect>
+  <rect x="39" y="28" width="5" height="16" fill="#f0efec"></rect>
+  <rect x="19" y="19" width="10" height="10" rx="2" fill="#f0efec"></rect>
+</svg>

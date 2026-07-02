@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="212" height="164" viewBox="0 0 212 164" fill="none" role="img" aria-label="asciilogic">
+  <title>asciilogic stacked wordmark — for light backgrounds</title>
+  <rect x="8" y="18" width="22" height="4" fill="#1c9a5b"></rect>
+  <rect x="8" y="18" width="4" height="22" fill="#1c9a5b"></rect>
+  <rect x="178" y="142" width="22" height="4" fill="#1c9a5b"></rect>
+  <rect x="196" y="124" width="4" height="22" fill="#1c9a5b"></rect>
+  <text x="26" y="72" font-family="'Space Mono', ui-monospace, monospace" font-size="44" font-weight="700" letter-spacing="-0.5" fill="#1a1a1a">ascii</text>
+  <text x="26" y="126" font-family="'Space Mono', ui-monospace, monospace" font-size="44" font-weight="700" letter-spacing="-0.5" fill="#1a1a1a">logic</text>
+  <rect x="164" y="88" width="8" height="40" fill="#1c9a5b"></rect>
+</svg>

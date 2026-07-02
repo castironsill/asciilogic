@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="96" viewBox="0 0 500 96" fill="none" role="img" aria-label="asciilogic">
+  <title>asciilogic horizontal wordmark — for light backgrounds</title>
+  <g transform="translate(6,16) scale(1.3333)">
+    <rect x="4" y="4" width="16" height="5" fill="#1c9a5b"></rect>
+    <rect x="4" y="4" width="5" height="16" fill="#1c9a5b"></rect>
+    <rect x="28" y="39" width="16" height="5" fill="#1c9a5b"></rect>
+    <rect x="39" y="28" width="5" height="16" fill="#1c9a5b"></rect>
+    <rect x="19" y="19" width="10" height="10" rx="2" fill="#1c9a5b"></rect>
+  </g>
+  <text x="88" y="63" font-family="'Space Mono', ui-monospace, monospace" font-size="58" font-weight="700" letter-spacing="-1" fill="#1a1a1a">asciilogic</text>
+  <rect x="442" y="17" width="7" height="52" fill="#1c9a5b"></rect>
+</svg>

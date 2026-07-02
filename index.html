@@ -10,9 +10,17 @@
     <link rel="canonical" href="https://asciilogic.com/">
     <meta name="theme-color" content="#1a1a1a">
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- Favicon / app icons — "Corner Frame" mark -->
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/png/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/png/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/brand/png/apple-touch-icon-180.png">
     <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- Brand fonts: Space Mono (logotype) + JetBrains Mono (UI) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Open Graph / social sharing -->
     <meta property="og:type" content="website">
@@ -89,7 +97,7 @@
 
         .style-btn.active {
             background: var(--accent);
-            color: white;
+            color: var(--on-accent);
             border-color: var(--accent);
         }
 
@@ -206,7 +214,19 @@
         
         <div class="main-area">
             <div class="top-bar">
-                <h1 style="font-size: 20px; font-weight: 500; margin: 0;">asciilogic</h1>
+                <h1 style="margin: 0;" aria-label="asciilogic">
+                    <span class="al-logo" style="font-size: 20px;" aria-hidden="true">
+                        <svg viewBox="0 0 48 48" fill="none">
+                            <rect x="4" y="4" width="16" height="5"/>
+                            <rect x="4" y="4" width="5" height="16"/>
+                            <rect x="28" y="39" width="16" height="5"/>
+                            <rect x="39" y="28" width="5" height="16"/>
+                            <rect x="19" y="19" width="10" height="10" rx="2"/>
+                        </svg>
+                        <span class="al-word">asciilogic</span>
+                        <span class="al-caret"></span>
+                    </span>
+                </h1>
                 <div class="settings-row">
                     <label for="grid-size">Grid Size:</label>
                     <input type="number" id="grid-size" value="10" min="5" max="50" step="5">
@@ -349,8 +369,18 @@
         <div class="help-content" role="dialog" aria-modal="true" aria-labelledby="help-title" tabindex="-1">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 16px;">
-                    <img src="logo.png" alt="asciilogic logo" style="height: 96px; width: auto;">
-                    <h2 id="help-title" style="margin: 0; color: var(--text-primary); font-size: 24px;">Welcome to asciilogic</h2>
+                    <span class="al-logo" style="font-size: 34px;" aria-hidden="true">
+                        <svg viewBox="0 0 48 48" fill="none">
+                            <rect x="4" y="4" width="16" height="5"/>
+                            <rect x="4" y="4" width="5" height="16"/>
+                            <rect x="28" y="39" width="16" height="5"/>
+                            <rect x="39" y="28" width="5" height="16"/>
+                            <rect x="19" y="19" width="10" height="10" rx="2"/>
+                        </svg>
+                        <span class="al-word">asciilogic</span>
+                        <span class="al-caret"></span>
+                    </span>
+                    <h2 id="help-title" class="visually-hidden">Welcome to asciilogic</h2>
                 </div>
                 <button class="modal-close" id="close-help" aria-label="Close">&times;</button>
             </div>
